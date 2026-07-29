@@ -11,7 +11,7 @@ export interface InvoiceRow {
   totalCost: string;
   dealerName: string;
   status: 'COMPLETED' | 'PENDING' | 'PROCESSING' | 'FAILED';
-  confidence: number;
+  confidence?: number;
 }
 
 export interface WorkerNode {
@@ -20,11 +20,9 @@ export interface WorkerNode {
   status: 'RUNNING' | 'READY' | 'PAUSED' | 'ERROR';
   currentTask: string;
   stage: string;
-  modelUsed: string;
-  elapsed: string;
-  speed: string;
-  retries: number;
-  confidence: number;
+  modelUsed?: string;
+  elapsed?: string;
+  confidence?: number;
   lastLog: string;
 }
 
@@ -33,9 +31,6 @@ export interface SystemKPIs {
   processedInvoices: number;
   pendingInvoices: number;
   successRate: number;
-  avgConfidence: number;
-  avgProcessingTime: string;
-  geminiRequests: number;
 }
 
 export interface LogEntry {
@@ -47,7 +42,7 @@ export interface LogEntry {
 
 export interface ExtractedInvoice {
   fileName?: string;
-  modelUsed: string;
+  modelUsed?: string;
   customerName: string;
   customerMobile: string;
   vehicleNumber: string;
@@ -57,6 +52,6 @@ export interface ExtractedInvoice {
   cost: string;
   totalCost: string;
   dealerName: string;
-  confidence: number;
+  confidence?: number;
   status: string;
 }

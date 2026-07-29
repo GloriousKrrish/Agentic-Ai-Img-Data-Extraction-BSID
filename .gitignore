@@ -25,3 +25,5 @@ results/*.json
 Thumbs.db
 .vscode/
 .idea/
+
+.vercel
