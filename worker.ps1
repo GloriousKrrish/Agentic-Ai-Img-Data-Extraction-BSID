@@ -255,15 +255,15 @@ while ($true) {
             Write-Host "Worker ${WorkerId} (Row $r) Model $modelName Error - $_ (Status: $status, IsQuota: $isQuotaError)" -ForegroundColor Red
             
             if ($status -eq 429 -and $isQuotaError) {
-                # Quota exhausted! Try the next model.
+                # Quota exhausted! Try the next model after short delay
                 $currentModelIndex++
                 if ($currentModelIndex -ge $models.Count) {
-                    Write-Host "Worker ${WorkerId} - All fallback models are exhausted. Sleeping 5 minutes before retrying..." -ForegroundColor Yellow
+                    Write-Host "Worker ${WorkerId} - All fallback models are exhausted. Sleeping 60s before retrying..." -ForegroundColor Yellow
                     $currentModelIndex = 0
-                    Start-Sleep -Seconds 300
+                    Start-Sleep -Seconds 60
                 } else {
                     Write-Host "Worker ${WorkerId} - Quota exhausted for $modelName. Falling back to $($models[$currentModelIndex])..." -ForegroundColor Yellow
-                    # Do not decrement $retries, just retry with the new model immediately
+                    Start-Sleep -Seconds 5
                     continue
                 }
             }

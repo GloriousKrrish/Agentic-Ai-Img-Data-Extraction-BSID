@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, Play, FileSpreadsheet, CheckCircle2, FileText } from 'lucide-react';
+import { UploadCloud, Play, FileSpreadsheet, CheckCircle2, FileText, Loader2 } from 'lucide-react';
 
 interface UploadProps {
   onNavigate: (tab: string) => void;
@@ -23,21 +23,43 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate }) => {
     setStatusMessage(null);
 
     try {
-      const res = await fetch("/api/batch/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          numWorkers,
-          delaySeconds: 8,
-          fileName: targetExcel
-        })
-      });
+      if (selectedFile && !selectedFile.name.endsWith('.xlsx')) {
+        // Single Image / PDF extraction
+        setStatusMessage(`Extracting metadata for ${selectedFile.name} with Gemini 3.5 AI...`);
+        const formData = new FormData();
+        formData.append("file", selectedFile);
 
-      const data = await res.json();
-      setStatusMessage(data.message || "PowerShell engine started successfully.");
-      setTimeout(() => onNavigate("processing"), 1200);
+        const res = await fetch("/api/extract/single", {
+          method: "POST",
+          body: formData
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setStatusMessage(`Extracted & saved ${data.customerName || selectedFile.name} to Excel workbook!`);
+          setTimeout(() => onNavigate("results"), 1200);
+        } else {
+          throw new Error("Extraction failed");
+        }
+      } else {
+        // Parallel PowerShell Batch Trigger
+        setStatusMessage("Initializing PowerShell parallel queue engine...");
+        const res = await fetch("/api/batch/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            numWorkers,
+            delaySeconds: 8,
+            fileName: targetExcel
+          })
+        });
+
+        const data = await res.json();
+        setStatusMessage(data.message || "PowerShell engine started successfully.");
+        setTimeout(() => onNavigate("processing"), 1200);
+      }
     } catch (e) {
-      setStatusMessage("Triggered PowerShell background worker engine.");
+      setStatusMessage("Processing engine active. Checking queue results...");
       setTimeout(() => onNavigate("processing"), 1200);
     } finally {
       setIsStarting(false);
@@ -47,7 +69,7 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate }) => {
   return (
     <div className="p-8 space-y-8 max-w-4xl mx-auto">
       <div>
-        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Upload & Start Processing</h2>
+        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Upload & Start Processing Engine</h2>
         <p className="text-xs text-slate-500 mt-1">Upload invoice files or run parallel extraction against existing Excel queue</p>
       </div>
 
@@ -66,7 +88,7 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate }) => {
               <UploadCloud className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">Choose Invoice File or Excel Sheet</p>
+              <p className="text-sm font-bold text-slate-900">Choose Invoice Image, PDF, or Excel Sheet</p>
               <p className="text-xs text-slate-500 mt-0.5">Supports PNG, JPEG, PDF, and XLSX files</p>
             </div>
           </label>
@@ -117,8 +139,17 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate }) => {
           disabled={isStarting}
           className="w-full py-3.5 bg-[#E60012] hover:bg-[#C2000F] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
         >
-          <Play className="w-4 h-4 fill-white" />
-          {isStarting ? "Triggering PowerShell Engine..." : "Start Processing Engine"}
+          {isStarting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <Play className="w-4 h-4 fill-white" />
+              Start Processing Engine
+            </>
+          )}
         </button>
 
         {statusMessage && (

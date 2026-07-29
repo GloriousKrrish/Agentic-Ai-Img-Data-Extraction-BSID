@@ -30,7 +30,7 @@ $excel.DisplayAlerts = $false
 
 try {
     $wb = $excel.Workbooks.Open($filePath)
-    $sheet = $wb.Sheets.Item("Sheet1")
+    $sheet = $wb.Sheets.Item(1)
     $rows = $sheet.UsedRange.Rows.Count
     
     Write-Host "Excel open. Scanning $rows rows..." -ForegroundColor Yellow

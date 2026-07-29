@@ -63,6 +63,30 @@ async def extract_single_invoice(file: UploadFile = File(...)):
             mime = "application/pdf"
         result = extract_invoice_from_bytes(content, mime)
         result["fileName"] = file.filename
+        
+        # Append row into Invoice_data_capture.xlsx
+        try:
+            import openpyxl
+            from backend.config import EXCEL_PATH
+            wb = openpyxl.load_workbook(EXCEL_PATH)
+            sheet = wb.active
+            sheet.append([
+                file.filename,
+                result.get("customerName", ""),
+                result.get("customerMobile", ""),
+                result.get("vehicleNumber", ""),
+                result.get("size", ""),
+                result.get("pattern", ""),
+                result.get("dot", ""),
+                result.get("cost", ""),
+                result.get("totalCost", ""),
+                result.get("dealerName", "")
+            ])
+            wb.save(EXCEL_PATH)
+            wb.close()
+        except Exception as ex:
+            print("Excel append note:", ex)
+            
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -134,7 +134,7 @@ try {
     $excel.Visible = $false
     $excel.DisplayAlerts = $false
     $wb = $excel.Workbooks.Open($filePath)
-    $sheet = $wb.Sheets.Item("Sheet1")
+    $sheet = $wb.Sheets.Item(1)
     
     # Initialize Dealer Name header at Col 10 if missing
     $headerCol10 = $sheet.Cells.Item(1, 10).Text

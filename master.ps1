@@ -20,7 +20,7 @@ $excel = New-Object -ComObject Excel.Application
 $excel.Visible = $false
 $excel.DisplayAlerts = $false
 $wb = $excel.Workbooks.Open($filePath)
-$sheet = $wb.Sheets.Item("Sheet1")
+$sheet = $wb.Sheets.Item(1)
 
 # Make sure dealer name header is initialized
 $headerCol10 = $sheet.Cells.Item(1, 10).Text
