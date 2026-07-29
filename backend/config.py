@@ -3,9 +3,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-PROJECT_ENGINE_DIR = BASE_DIR / "Agentic-Ai-Img-Data-Extraction-BSID-main"
+PROJECT_ENGINE_DIR = BASE_DIR
 
-load_dotenv(PROJECT_ENGINE_DIR / ".env")
 load_dotenv(BASE_DIR / ".env")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
