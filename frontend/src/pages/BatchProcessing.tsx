@@ -45,7 +45,7 @@ export const BatchProcessing: React.FC<BatchProcessingProps> = ({ kpis, workers,
     }
   };
 
-  const estTimeMinutes = Math.ceil((kpis.pendingInvoices * delaySeconds) / (numWorkers * 60));
+  const estTimeMinutes = Math.ceil(((kpis.pendingDocuments || 0) * delaySeconds) / (numWorkers * 60));
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
@@ -57,15 +57,15 @@ export const BatchProcessing: React.FC<BatchProcessingProps> = ({ kpis, workers,
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold mb-3 border border-white/20">
               <Sparkles className="w-3.5 h-3.5 text-[#E60012]" /> Flagship Enterprise Engine
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight">Bulk Invoice Batch Processing</h2>
+            <h2 className="text-3xl font-extrabold tracking-tight">Bulk Document Batch Processing</h2>
             <p className="text-sm text-slate-200 mt-1 max-w-2xl">
-              Distribute high-volume invoice URL queues across parallel PowerShell worker threads and sync results dynamically into Excel workbooks.
+              Distribute high-volume document URL queues across parallel PowerShell worker threads and sync results dynamically into Excel workbooks.
             </p>
           </div>
 
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 text-center min-w-[200px]">
             <span className="text-[10px] uppercase font-bold text-slate-300">Pending URL Queue</span>
-            <div className="text-3xl font-extrabold text-white mt-0.5">{kpis.pendingInvoices} Rows</div>
+            <div className="text-3xl font-extrabold text-white mt-0.5">{kpis.pendingDocuments || 0} Rows</div>
             <span className="text-xs text-emerald-300 font-semibold flex items-center justify-center gap-1 mt-1">
               <Clock className="w-3.5 h-3.5" /> ~{estTimeMinutes} mins est.
             </span>

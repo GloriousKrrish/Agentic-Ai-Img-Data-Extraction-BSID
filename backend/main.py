@@ -4,11 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 
-from backend.config import GEMINI_API_KEY, MODELS_PRIORITY, PROJECT_ENGINE_DIR
+import backend.config as config
 from backend.services.excel_service import read_excel_rows, get_excel_kpis
 from backend.services.gemini_service import extract_invoice_from_bytes
 from backend.services.ps_runner import get_queue_status, start_parallel_batch, get_realtime_logs
 from backend.services.ws_manager import ws_manager
+
 
 app = FastAPI(
     title="Bridgestone Agentic AI Data Extraction API",
@@ -31,7 +32,9 @@ class BatchStartRequest(BaseModel):
 
 class SettingsUpdateRequest(BaseModel):
     geminiApiKey: str
-    modelsPriority: list[str] = MODELS_PRIORITY
+    primaryModel: str = "gemini-3.5-flash"
+    modelsPriority: list[str] = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-1.5-flash"]
+
 
 @app.get("/")
 def read_root():
@@ -54,42 +57,79 @@ def get_system_status():
 def get_excel_rows_endpoint():
     return read_excel_rows()
 
-@app.post("/api/extract/single")
-async def extract_single_invoice(file: UploadFile = File(...)):
+from fastapi.responses import Response
+from backend.services.file_parser import parse_file_content
+from backend.services.image_preprocessor import preprocess_image
+from backend.services.schema_generator import generate_dynamic_schema
+from backend.services.universal_extractor import extract_universal_document
+from backend.services.dynamic_exporter import generate_dynamic_excel, generate_dynamic_csv
+
+@app.post("/api/extract/universal")
+async def extract_universal(file: UploadFile = File(...)):
     try:
         content = await file.read()
-        mime = file.content_type or "image/jpeg"
-        if "pdf" in file.filename.lower():
-            mime = "application/pdf"
-        result = extract_invoice_from_bytes(content, mime)
-        result["fileName"] = file.filename
+        mime = file.content_type or "application/octet-stream"
+        file_name = file.filename or "uploaded_document"
         
-        # Append row into Invoice_data_capture.xlsx
-        try:
-            import openpyxl
-            from backend.config import EXCEL_PATH
-            wb = openpyxl.load_workbook(EXCEL_PATH)
-            sheet = wb.active
-            sheet.append([
-                file.filename,
-                result.get("customerName", ""),
-                result.get("customerMobile", ""),
-                result.get("vehicleNumber", ""),
-                result.get("size", ""),
-                result.get("pattern", ""),
-                result.get("dot", ""),
-                result.get("cost", ""),
-                result.get("totalCost", ""),
-                result.get("dealerName", "")
-            ])
-            wb.save(EXCEL_PATH)
-            wb.close()
-        except Exception as ex:
-            print("Excel append note:", ex)
+        # 1. Parse File Content
+        parsed = parse_file_content(content, file_name, mime)
+        
+        # 2. Image Preprocessing (if applicable)
+        file_bytes_to_use = content
+        if parsed.get("file_type") == "image":
+            file_bytes_to_use, _ = preprocess_image(content)
             
-        return result
+        # 3. Dynamic Schema Inference via Gemini AI
+        schema_info = generate_dynamic_schema(
+            file_bytes_to_use, 
+            mime, 
+            text_content=parsed.get("text_content", "")
+        )
+        
+        # 4. Universal Schema-Guided Extraction
+        extracted_result = extract_universal_document(
+            file_bytes_to_use, 
+            schema_info, 
+            mime, 
+            text_content=parsed.get("text_content", "")
+        )
+        extracted_result["fileName"] = file_name
+        extracted_result["fileType"] = parsed.get("file_type", "unknown")
+        
+        return extracted_result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class DynamicExportRequest(BaseModel):
+    items: list[dict]
+    format: str = "excel" # excel | csv | json
+
+@app.post("/api/export/dynamic")
+def export_dynamic(req: DynamicExportRequest):
+    try:
+        if req.format == "csv":
+            csv_data = generate_dynamic_csv(req.items)
+            return Response(
+                content=csv_data,
+                media_type="text/csv",
+                headers={"Content-Disposition": "attachment; filename=extracted_data.csv"}
+            )
+        elif req.format == "json":
+            return req.items
+        else: # Excel default
+            excel_bytes = generate_dynamic_excel(req.items)
+            return Response(
+                content=excel_bytes,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": "attachment; filename=extracted_data.xlsx"}
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/extract/single")
+async def extract_single_invoice(file: UploadFile = File(...)):
+    return await extract_universal(file)
+
 
 @app.post("/api/batch/start")
 def trigger_batch(req: BatchStartRequest):
@@ -102,17 +142,31 @@ def get_logs():
 @app.get("/api/settings")
 def get_settings():
     return {
-        "geminiApiKey": GEMINI_API_KEY,
-        "modelsPriority": MODELS_PRIORITY,
-        "engineDir": str(PROJECT_ENGINE_DIR)
+        "geminiApiKey": config.GEMINI_API_KEY,
+        "primaryModel": config.GEMINI_PRIMARY_MODEL,
+        "modelsPriority": config.MODELS_PRIORITY,
+        "engineDir": str(config.PROJECT_ENGINE_DIR)
     }
 
 @app.post("/api/settings")
 def update_settings(req: SettingsUpdateRequest):
-    env_path = PROJECT_ENGINE_DIR / ".env"
+    env_path = config.PROJECT_ENGINE_DIR / ".env"
+    priority_list = req.modelsPriority if req.modelsPriority else config.MODELS_PRIORITY
+    primary = req.primaryModel.strip() if req.primaryModel else priority_list[0]
+    
+    if primary not in priority_list:
+        priority_list.insert(0, primary)
+    
+    priority_str = ",".join(priority_list)
+    
     with open(env_path, "w", encoding="utf-8") as f:
         f.write(f"GEMINI_API_KEY={req.geminiApiKey.strip()}\n")
+        f.write(f"GEMINI_PRIMARY_MODEL={primary}\n")
+        f.write(f"MODELS_PRIORITY={priority_str}\n")
+        
+    config.load_config_vars()
     return {"status": "SUCCESS", "message": "Settings saved successfully."}
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -121,17 +175,17 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             kpis = get_excel_kpis()
             q_status = get_queue_status()
-            rows = read_excel_rows()
-            logs = get_realtime_logs()
-            
+            excel_data = read_excel_rows()
             await websocket.send_json({
                 "type": "SYNC_UPDATE",
                 "kpis": kpis,
                 "queue": q_status,
-                "recentRows": rows[:10],
+                "excelData": excel_data,
+                "recentRows": excel_data.get("rows", [])[:10],
                 "logs": logs[:10]
             })
             await asyncio.sleep(1.5)
+
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
     except Exception:

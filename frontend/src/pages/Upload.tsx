@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { UploadCloud, Play, FileSpreadsheet, CheckCircle2, FileText, Loader2 } from 'lucide-react';
+import { UploadCloud, Sparkles, FileText, CheckCircle2, Loader2, FileSpreadsheet, FileCode, Archive } from 'lucide-react';
+import type { SchemaColumn, DynamicRow } from '../types';
 
 interface UploadProps {
   onNavigate: (tab: string) => void;
+  onDatasetExtracted?: (dataset: { schema: SchemaColumn[]; rows: DynamicRow[] }) => void;
 }
 
-export const Upload: React.FC<UploadProps> = ({ onNavigate }) => {
+export const Upload: React.FC<UploadProps> = ({ onNavigate, onDatasetExtracted }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [targetExcel, setTargetExcel] = useState<string>("Invoice_data_capture.xlsx");
-  const [numWorkers, setNumWorkers] = useState<number>(3);
-  const [isStarting, setIsStarting] = useState<boolean>(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,142 +18,147 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate }) => {
     }
   };
 
-  const handleStartProcessing = async () => {
-    setIsStarting(true);
-    setStatusMessage(null);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setSelectedFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleUniversalExtract = async () => {
+    if (!selectedFile) return;
+    setIsProcessing(true);
+    setStatusMessage(`Analyzing & inferring dynamic AI schema for ${selectedFile.name}...`);
 
     try {
-      if (selectedFile && !selectedFile.name.endsWith('.xlsx')) {
-        // Single Image / PDF extraction
-        setStatusMessage(`Extracting metadata for ${selectedFile.name} with Gemini 3.5 AI...`);
-        const formData = new FormData();
-        formData.append("file", selectedFile);
+      const formData = new FormData();
+      formData.append("file", selectedFile);
 
-        const res = await fetch("/api/extract/single", {
-          method: "POST",
-          body: formData
-        });
+      const res = await fetch("/api/extract/universal", {
+        method: "POST",
+        body: formData
+      });
 
-        if (res.ok) {
-          const data = await res.json();
-          setStatusMessage(`Extracted & saved ${data.customerName || selectedFile.name} to Excel workbook!`);
-          setTimeout(() => onNavigate("results"), 1200);
-        } else {
-          throw new Error("Extraction failed");
-        }
-      } else {
-        // Parallel PowerShell Batch Trigger
-        setStatusMessage("Initializing PowerShell parallel queue engine...");
-        const res = await fetch("/api/batch/start", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            numWorkers,
-            delaySeconds: 8,
-            fileName: targetExcel
-          })
-        });
-
+      if (res.ok) {
         const data = await res.json();
-        setStatusMessage(data.message || "PowerShell engine started successfully.");
-        setTimeout(() => onNavigate("processing"), 1200);
+        localStorage.setItem("latest_universal_doc", JSON.stringify(data));
+        
+        const extractedSchema: SchemaColumn[] = data.schema || [];
+        const extractedRows: DynamicRow[] = data.rows || [];
+
+        if (extractedSchema.length > 0) {
+          localStorage.setItem("active_schema", JSON.stringify(extractedSchema));
+        }
+        if (extractedRows.length > 0) {
+          localStorage.setItem("active_rows", JSON.stringify(extractedRows));
+        }
+
+        if (onDatasetExtracted) {
+          onDatasetExtracted({ schema: extractedSchema, rows: extractedRows });
+        }
+
+        setStatusMessage(`Successfully classified as "${data.documentCategory || data.category || 'Document'}" with ${data.confidence || 95}% confidence!`);
+        setTimeout(() => onNavigate("results"), 1200);
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || "Universal extraction failed");
       }
-    } catch (e) {
-      setStatusMessage("Processing engine active. Checking queue results...");
-      setTimeout(() => onNavigate("processing"), 1200);
+    } catch (e: any) {
+      setStatusMessage(`Extraction error: ${e.message || 'Failed to process document'}`);
     } finally {
-      setIsStarting(false);
+      setIsProcessing(false);
     }
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-4xl mx-auto">
-      <div>
-        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Upload & Start Processing Engine</h2>
-        <p className="text-xs text-slate-500 mt-1">Upload invoice files or run parallel extraction against existing Excel queue</p>
+    <div className="p-8 space-y-8 max-w-5xl mx-auto">
+      <div className="text-center space-y-2">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#E6001210] text-[#E60012] rounded-full text-xs font-bold border border-[#E6001220]">
+          <Sparkles className="w-3.5 h-3.5" />
+          Enterprise Universal AI Document Intelligence Platform (IDP)
+        </div>
+        <h1 className="text-3xl font-black text-[#1E293B] tracking-tight">Drop Anything Here</h1>
+        <p className="text-xs text-slate-500 max-w-xl mx-auto">
+          Upload ANY PDF, scanned document, image, Word document, Excel spreadsheet, CSV, JSON, XML, TXT, or ZIP archive. Zero templates required.
+        </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6">
-        {/* Upload Dropzone */}
-        <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center space-y-3">
+      <div className="glass-card rounded-3xl p-8 space-y-6 shadow-xl border border-slate-200">
+        {/* Universal Dropzone */}
+        <div 
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className="border-2 border-dashed border-slate-300 hover:border-[#E60012] transition-all rounded-2xl p-12 text-center cursor-pointer space-y-4 bg-slate-50/50"
+        >
           <input 
             type="file" 
-            id="file-upload" 
+            id="universal-file-upload" 
             onChange={handleFileSelect} 
             className="hidden" 
-            accept="image/*,application/pdf,.xlsx"
           />
-          <label htmlFor="file-upload" className="cursor-pointer space-y-2 block">
-            <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mx-auto">
-              <UploadCloud className="w-6 h-6" />
+          <label htmlFor="universal-file-upload" className="cursor-pointer space-y-3 block">
+            <div className="w-16 h-16 rounded-2xl bg-[#E600120F] text-[#E60012] flex items-center justify-center mx-auto shadow-sm">
+              <UploadCloud className="w-8 h-8" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-900">Choose Invoice Image, PDF, or Excel Sheet</p>
-              <p className="text-xs text-slate-500 mt-0.5">Supports PNG, JPEG, PDF, and XLSX files</p>
+              <p className="text-base font-extrabold text-[#1E293B]">Drag & Drop Any File or Click to Browse</p>
+              <p className="text-xs text-slate-500 mt-1">Supports PDF, PNG, JPG, DOCX, XLSX, CSV, JSON, XML, TXT, ZIP up to 50MB</p>
             </div>
           </label>
 
           {selectedFile && (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-800">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-xs font-bold text-slate-800 border border-slate-200 shadow-sm">
               <FileText className="w-4 h-4 text-[#005BAC]" />
               {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
             </div>
           )}
         </div>
 
-        {/* Target Excel Selection & Worker Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold">
-          <div className="space-y-1.5">
-            <label className="text-slate-700 font-bold flex items-center gap-1.5">
-              <FileSpreadsheet className="w-4 h-4 text-[#005BAC]" />
-              Target Excel Workbook
-            </label>
-            <select 
-              value={targetExcel} 
-              onChange={(e) => setTargetExcel(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-medium"
-            >
-              <option value="Invoice_data_capture.xlsx">Invoice_data_capture.xlsx (Default Queue)</option>
-              <option value="Invoice_data_capture-3.xlsx">Invoice_data_capture-3.xlsx</option>
-              <option value="Invoice_data_capture-50.xlsx">Invoice_data_capture-50.xlsx</option>
-            </select>
+        {/* Format Badges Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-semibold text-slate-600 pt-2">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-[#E60012]" />
+            PDF & Scanned Papers
           </div>
-
-          <div className="space-y-1.5">
-            <label className="text-slate-700 font-bold">Parallel Workers Allocation</label>
-            <select 
-              value={numWorkers} 
-              onChange={(e) => setNumWorkers(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-medium"
-            >
-              <option value={1}>1 Worker Thread</option>
-              <option value={3}>3 Worker Threads (Recommended)</option>
-              <option value={5}>5 Worker Threads</option>
-            </select>
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Excel, CSV & Workbooks
+          </div>
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
+            <FileCode className="w-4 h-4 text-[#005BAC]" />
+            Word, JSON & XML
+          </div>
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
+            <Archive className="w-4 h-4 text-amber-600" />
+            ZIP Archives & Batches
           </div>
         </div>
 
-        {/* Start Processing Trigger Button */}
+        {/* Action Button */}
         <button 
-          onClick={handleStartProcessing}
-          disabled={isStarting}
-          className="w-full py-3.5 bg-[#E60012] hover:bg-[#C2000F] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          onClick={handleUniversalExtract}
+          disabled={!selectedFile || isProcessing}
+          className="w-full py-4 bg-[#E60012] hover:bg-[#C2000F] text-white font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
         >
-          {isStarting ? (
+          {isProcessing ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Processing...
+              Running Universal AI Pipeline...
             </>
           ) : (
             <>
-              <Play className="w-4 h-4 fill-white" />
-              Start Processing Engine
+              <Sparkles className="w-4 h-4" />
+              Process & Auto-Discover Dynamic Schema
             </>
           )}
         </button>
 
         {statusMessage && (
-          <div className="p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-2">
+          <div className="p-4 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             {statusMessage}
           </div>

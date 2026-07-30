@@ -1,17 +1,26 @@
-export interface InvoiceRow {
+export interface SchemaColumn {
+  key: string;
+  label: string;
+  type?: string;
+}
+
+export interface DynamicRow {
   rowIndex: number;
-  url: string;
-  customerName: string;
-  customerMobile: string;
-  vehicleNumber: string;
-  size: string;
-  pattern: string;
-  dot: string;
-  cost: string;
-  totalCost: string;
-  dealerName: string;
-  status: 'COMPLETED' | 'PENDING' | 'PROCESSING' | 'FAILED';
+  fields: Record<string, any>;
+  status: string;
   confidence?: number;
+}
+
+export interface UniversalDataset {
+  schema: SchemaColumn[];
+  rows: DynamicRow[];
+  documentCategory?: string;
+  documentTitle?: string;
+  fileName?: string;
+  fileType?: string;
+  modelUsed?: string;
+  confidence?: number;
+  status?: string;
 }
 
 export interface WorkerNode {
@@ -27,9 +36,9 @@ export interface WorkerNode {
 }
 
 export interface SystemKPIs {
-  totalInvoices: number;
-  processedInvoices: number;
-  pendingInvoices: number;
+  totalDocuments: number;
+  processedDocuments: number;
+  pendingDocuments: number;
   successRate: number;
 }
 
@@ -38,20 +47,4 @@ export interface LogEntry {
   worker: string;
   message: string;
   level: 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS';
-}
-
-export interface ExtractedInvoice {
-  fileName?: string;
-  modelUsed?: string;
-  customerName: string;
-  customerMobile: string;
-  vehicleNumber: string;
-  size: string;
-  pattern: string;
-  dot: string;
-  cost: string;
-  totalCost: string;
-  dealerName: string;
-  confidence?: number;
-  status: string;
 }

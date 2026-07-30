@@ -77,6 +77,23 @@ if ($null -eq $apiKeyLine) {
 }
 $apiKey = ($apiKeyLine -split "=", 2)[1].Trim()
 
+$modelsLine = $envContent | Where-Object { $_ -like "MODELS_PRIORITY*" }
+if ($null -ne $modelsLine) {
+    $modelsStr = ($modelsLine -split "=", 2)[1].Trim()
+    $models = @($modelsStr -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" })
+} else {
+    $models = @("gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-1.5-flash")
+}
+
+$primaryLine = $envContent | Where-Object { $_ -like "GEMINI_PRIMARY_MODEL*" }
+if ($null -ne $primaryLine) {
+    $primaryModel = ($primaryLine -split "=", 2)[1].Trim()
+    if ($primaryModel -ne "" -and $models.Contains($primaryModel)) {
+        $models = @($primaryModel) + @($models | Where-Object { $_ -ne $primaryModel })
+    }
+}
+
+
 # 2. Check File Path
 $filePath = Join-Path $scriptDir $FileName
 if (-not (Test-Path $filePath)) {
@@ -222,14 +239,8 @@ try {
             }
         } | ConvertTo-Json -Depth 10
 
-        $models = @(
-            "gemini-3.5-flash",
-            "gemini-2.5-flash",
-            "gemini-2.5-flash-lite",
-            "gemini-3.1-flash-lite",
-            "gemini-1.5-flash"
-        )
         $currentModelIndex = 0
+
 
         while ($retries -gt 0 -and -not $success) {
             $modelName = $models[$currentModelIndex]

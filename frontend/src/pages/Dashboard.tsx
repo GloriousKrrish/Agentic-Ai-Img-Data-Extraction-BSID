@@ -1,15 +1,17 @@
 import React from 'react';
-import type { SystemKPIs, InvoiceRow } from '../types';
+import type { SystemKPIs, SchemaColumn, DynamicRow } from '../types';
 import { Upload, Table, Clock } from 'lucide-react';
 
 interface DashboardProps {
   kpis: SystemKPIs;
-  recentRows: InvoiceRow[];
+  schema: SchemaColumn[];
+  recentRows: DynamicRow[];
   onNavigate: (tab: string) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ kpis, recentRows, onNavigate }) => {
-  const isEngineActive = kpis.pendingInvoices > 0;
+export const Dashboard: React.FC<DashboardProps> = ({ kpis, schema, recentRows, onNavigate }) => {
+  const isEngineActive = (kpis.pendingDocuments || 0) > 0;
+  const displaySchema = schema.slice(0, 5); // Show first 5 columns on dashboard preview
 
   return (
     <div className="p-8 space-y-8 max-w-6xl mx-auto">
@@ -17,13 +19,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpis, recentRows, onNaviga
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-700 mb-2">
-            Bridgestone Document Intelligence
+            Universal AI Document Intelligence Platform
           </div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Bridgestone Agentic AI Data Extraction Engine
+            Universal AI Data Extraction Engine
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time parallel pipeline for automated invoice data extraction and Excel synchronization.
+            Real-time multi-format document classification, dynamic schema discovery, and data grid synchronization.
           </p>
         </div>
 
@@ -49,8 +51,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpis, recentRows, onNaviga
             <Upload className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">Upload Invoices</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Upload invoice images, PDFs, or Excel lists to begin</p>
+            <h3 className="font-bold text-slate-900 text-sm">Upload Documents</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Upload any document, PDF, Excel, CSV, or Image format</p>
           </div>
         </div>
 
@@ -75,8 +77,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpis, recentRows, onNaviga
             <Table className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">Live Excel Sync Results</h3>
-            <p className="text-xs text-slate-500 mt-0.5">View real-time extracted rows from Invoice_data_capture.xlsx</p>
+            <h3 className="font-bold text-slate-900 text-sm">Dynamic Results Grid</h3>
+            <p className="text-xs text-slate-500 mt-0.5">View auto-discovered schemas and dynamic column rows</p>
           </div>
         </div>
       </div>
@@ -86,10 +88,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpis, recentRows, onNaviga
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <h3 className="font-bold text-slate-900 text-sm">Recent Processing Rows</h3>
-            <p className="text-xs text-slate-500">Real rows loaded directly from backend Excel sheet</p>
+            <p className="text-xs text-slate-500">Auto-discovered schema columns and live extracted records</p>
           </div>
           <span className="text-xs font-semibold text-slate-600">
-            {kpis.processedInvoices} / {kpis.totalInvoices} Processed
+            {kpis.processedDocuments || 0} / {kpis.totalDocuments || 0} Processed
           </span>
         </div>
 
@@ -98,22 +100,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpis, recentRows, onNaviga
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-500 uppercase font-semibold">
-                  <th className="py-2.5 px-3">Row #</th>
-                  <th className="py-2.5 px-3">Customer Name</th>
-                  <th className="py-2.5 px-3">Vehicle Plate</th>
-                  <th className="py-2.5 px-3">Pattern</th>
-                  <th className="py-2.5 px-3">Total Cost</th>
-                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Row #</th>
+                  {displaySchema.map(col => (
+                    <th key={col.key} className="py-2.5 px-3 whitespace-nowrap">{col.label}</th>
+                  ))}
+                  <th className="py-2.5 px-3 whitespace-nowrap">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                 {recentRows.slice(0, 6).map((row) => (
                   <tr key={row.rowIndex}>
                     <td className="py-2.5 px-3 font-bold text-[#005BAC]">#{row.rowIndex}</td>
-                    <td className="py-2.5 px-3">{row.customerName || '-'}</td>
-                    <td className="py-2.5 px-3 font-mono uppercase">{row.vehicleNumber || '-'}</td>
-                    <td className="py-2.5 px-3 font-bold text-[#E60012]">{row.pattern || '-'}</td>
-                    <td className="py-2.5 px-3 font-bold text-emerald-600">{row.totalCost ? `₹${row.totalCost}` : '-'}</td>
+                    {displaySchema.map(col => (
+                      <td key={col.key} className="py-2.5 px-3 max-w-xs truncate">
+                        {row.fields && row.fields[col.key] ? String(row.fields[col.key]) : '-'}
+                      </td>
+                    ))}
                     <td className="py-2.5 px-3">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                         row.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
@@ -128,7 +130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpis, recentRows, onNaviga
           </div>
         ) : (
           <div className="py-12 text-center text-slate-400 text-xs font-medium">
-            Waiting for backend data from Excel workbook...
+            Waiting for document processing data...
           </div>
         )}
       </div>

@@ -78,8 +78,25 @@ if ($null -eq $apiKeyLine) {
 }
 $apiKey = ($apiKeyLine -split "=", 2)[1].Trim()
 
+$modelsLine = $envContent | Where-Object { $_ -like "MODELS_PRIORITY*" }
+if ($null -ne $modelsLine) {
+    $modelsStr = ($modelsLine -split "=", 2)[1].Trim()
+    $models = @($modelsStr -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" })
+} else {
+    $models = @("gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-1.5-flash")
+}
+
+$primaryLine = $envContent | Where-Object { $_ -like "GEMINI_PRIMARY_MODEL*" }
+if ($null -ne $primaryLine) {
+    $primaryModel = ($primaryLine -split "=", 2)[1].Trim()
+    if ($primaryModel -ne "" -and $models.Contains($primaryModel)) {
+        $models = @($primaryModel) + @($models | Where-Object { $_ -ne $primaryModel })
+    }
+}
+
 $queueDir = Join-Path $scriptDir "queue"
 $resultsDir = Join-Path $scriptDir "results"
+
 
 $schema = @{
     type = "object"
@@ -118,14 +135,8 @@ Important:
 - Clean all values of currency symbols ($ or ₹), commas, or extra spacing.
 "@
 
-$models = @(
-    "gemini-3.5-flash",
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-    "gemini-3.1-flash-lite",
-    "gemini-1.5-flash"
-)
 $currentModelIndex = 0
+
 
 Write-Host "Worker ${WorkerId} started. Workspace: ${scriptDir}" -ForegroundColor Green
 
