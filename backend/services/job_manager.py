@@ -251,27 +251,71 @@ class JobManager:
             if parsed.get("file_type") == "image":
                 bytes_to_use, _ = preprocess_image(content_bytes)
 
-            # 3. Generating Schema
-            self.update_job_progress(job_id, "Generating Schema", "Inferring dynamic AI schema with Gemini", 50.0)
-            schema_info = generate_dynamic_schema(
-                bytes_to_use, 
-                job.get("file_type", ""), 
-                text_content=parsed.get("text_content", "")
-            )
+            # Check if Excel/CSV file contains image URLs
+            excel_urls = []
+            if parsed.get("file_type") in ["xlsx", "csv"]:
+                from backend.services.excel_service import extract_urls_from_excel_bytes
+                excel_urls = extract_urls_from_excel_bytes(content_bytes, filename)
 
-            # 4. Extracting Data
-            self.update_job_progress(job_id, "Extracting", "Universal schema-guided data extraction", 75.0)
-            extracted_res = extract_universal_document(
-                bytes_to_use, 
-                schema_info, 
-                job.get("file_type", ""), 
-                text_content=parsed.get("text_content", "")
-            )
+            if excel_urls:
+                self.update_job_progress(job_id, "Extracting URLs", f"Found {len(excel_urls)} image links in Excel. Downloading & analyzing images...", 40.0)
+                import requests
+                all_extracted_rows = []
+                common_schema = []
+                doc_category = "Batch Image Links Dataset"
+                doc_title = f"Extracted {len(excel_urls)} Image Links from {filename}"
 
-            schema = extracted_res.get("schema", [])
-            rows = extracted_res.get("rows", [])
-            doc_category = extracted_res.get("documentCategory") or schema_info.get("documentCategory", "General Document")
-            doc_title = extracted_res.get("documentTitle") or schema_info.get("documentTitle", "Extracted Document")
+                for idx, item in enumerate(excel_urls[:15]):
+                    u = item["url"]
+                    try:
+                        self.update_job_progress(job_id, "Extracting", f"Downloading image {idx+1}/{len(excel_urls)}: {u[:40]}...", 40.0 + (idx / len(excel_urls)) * 40.0)
+                        img_res = requests.get(u, timeout=15)
+                        if img_res.status_code == 200 and len(img_res.content) > 100:
+                            proc_bytes, _ = preprocess_image(img_res.content)
+                            if not common_schema:
+                                schema_info = generate_dynamic_schema(proc_bytes, "image/jpeg")
+                                common_schema = schema_info.get("fields", [])
+                                doc_category = schema_info.get("documentCategory", doc_category)
+                            else:
+                                schema_info = {"documentCategory": doc_category, "fields": common_schema}
+
+                            ext_res = extract_universal_document(proc_bytes, schema_info, "image/jpeg")
+                            for r in ext_res.get("rows", []):
+                                r["rowIndex"] = item.get("rowIndex", idx + 1)
+                                r["fields"]["imageUrl"] = u
+                                all_extracted_rows.append(r)
+                    except Exception as e:
+                        print(f"Error fetching URL {u}: {e}")
+
+                if common_schema:
+                    schema = [{"key": f.get("key"), "label": f.get("label", f.get("key"))} for f in common_schema if f.get("key")]
+                    if not any(col.get("key") == "imageUrl" for col in schema):
+                        schema.insert(0, {"key": "imageUrl", "label": "Image URL"})
+                else:
+                    schema = [{"key": "imageUrl", "label": "Image URL"}, {"key": "status", "label": "Status"}]
+
+                rows = all_extracted_rows if all_extracted_rows else [{"rowIndex": 1, "fields": {"imageUrl": "No valid images downloaded"}, "status": "FAILED"}]
+            else:
+                # Standard single document processing
+                self.update_job_progress(job_id, "Generating Schema", "Inferring dynamic AI schema with Gemini", 50.0)
+                schema_info = generate_dynamic_schema(
+                    bytes_to_use, 
+                    job.get("file_type", ""), 
+                    text_content=parsed.get("text_content", "")
+                )
+
+                self.update_job_progress(job_id, "Extracting", "Universal schema-guided data extraction", 75.0)
+                extracted_res = extract_universal_document(
+                    bytes_to_use, 
+                    schema_info, 
+                    job.get("file_type", ""), 
+                    text_content=parsed.get("text_content", "")
+                )
+
+                schema = extracted_res.get("schema", [])
+                rows = extracted_res.get("rows", [])
+                doc_category = extracted_res.get("documentCategory") or schema_info.get("documentCategory", "General Document")
+                doc_title = extracted_res.get("documentTitle") or schema_info.get("documentTitle", "Extracted Document")
 
             # 5. Writing Excel
             self.update_job_progress(

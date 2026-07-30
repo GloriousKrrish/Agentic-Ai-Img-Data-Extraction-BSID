@@ -74,6 +74,38 @@ def read_excel_rows(file_path: Path = EXCEL_PATH) -> dict:
     except Exception as e:
         return {"schema": [], "rows": [], "error": str(e)}
 
+def extract_urls_from_excel_bytes(file_bytes: bytes, filename: str) -> list[dict]:
+    """
+    Parses Excel/CSV file bytes and extracts all image HTTP/HTTPS URL links.
+    Returns: [{"rowIndex": 2, "url": "https://..."}]
+    """
+    ext = Path(filename).suffix.lower()
+    urls_list = []
+
+    try:
+        if ext == '.csv':
+            decoded = file_bytes.decode('utf-8', errors='ignore')
+            reader = csv.reader(io.StringIO(decoded))
+            for row_idx, row in enumerate(reader, start=1):
+                for cell in row:
+                    cell_str = str(cell).strip()
+                    if cell_str.startswith("http://") or cell_str.startswith("https://"):
+                        urls_list.append({"rowIndex": row_idx, "url": cell_str})
+        elif ext in ['.xlsx', '.xls']:
+            wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
+            sheet = wb.active
+            for row_idx in range(1, sheet.max_row + 1):
+                for col_idx in range(1, sheet.max_column + 1):
+                    val = sheet.cell(row=row_idx, column=col_idx).value
+                    val_str = str(val).strip() if val is not None else ""
+                    if val_str.startswith("http://") or val_str.startswith("https://"):
+                        urls_list.append({"rowIndex": row_idx, "url": val_str})
+            wb.close()
+    except Exception as e:
+        print(f"Error extracting URLs from Excel: {e}")
+
+    return urls_list
+
 def get_excel_kpis(file_path: Path = EXCEL_PATH):
     result = read_excel_rows(file_path)
     rows = result.get("rows", [])
