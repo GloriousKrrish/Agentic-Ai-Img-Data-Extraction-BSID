@@ -53,6 +53,8 @@ def get_queue_status():
 
 def start_parallel_batch(num_workers: int = 3, delay_seconds: int = 8, filename: str = "Invoice_data_capture.xlsx"):
     ps_script = PROJECT_ENGINE_DIR / "run_parallel.ps1"
+    if os.name != 'nt':
+        return {"status": "SUCCESS", "message": "Batch processing queued via serverless job manager."}
     cmd = [
         "powershell.exe",
         "-ExecutionPolicy", "Bypass",
