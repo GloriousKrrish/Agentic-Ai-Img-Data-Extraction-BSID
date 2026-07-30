@@ -52,6 +52,39 @@ def read_root():
         "status": "ONLINE"
     }
 
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ONLINE",
+        "version": "3.0.0",
+        "gemini_key_set": bool(config.GEMINI_API_KEY),
+        "models_priority": config.MODELS_PRIORITY
+    }
+
+@app.post("/api/test-key")
+def test_api_key(req: dict):
+    """Test a Gemini API key and return its status"""
+    import requests as req_lib
+    key = req.get("apiKey", "").strip()
+    model = req.get("model", "gemini-2.0-flash-lite")
+    if not key:
+        return {"status": "INVALID", "message": "No API key provided"}
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+        res = req_lib.post(url, json={"contents": [{"parts": [{"text": "ping"}]}]}, timeout=15)
+        if res.status_code == 200:
+            return {"status": "OK", "message": f"Key valid, model {model} responded successfully"}
+        elif res.status_code == 429:
+            data = res.json()
+            msg = data.get("error", {}).get("message", "Quota exhausted")
+            return {"status": "QUOTA_EXCEEDED", "message": msg[:300]}
+        else:
+            data = res.json()
+            msg = data.get("error", {}).get("message", res.text)
+            return {"status": "INVALID", "message": msg[:300]}
+    except Exception as e:
+        return {"status": "ERROR", "message": str(e)}
+
 @app.get("/api/status")
 def get_system_status():
     kpis = get_excel_kpis()

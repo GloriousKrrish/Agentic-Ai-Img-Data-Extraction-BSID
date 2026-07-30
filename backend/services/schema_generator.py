@@ -77,12 +77,20 @@ def generate_dynamic_schema(file_bytes: bytes, mime_type: str = "image/jpeg", te
                     parsed = json.loads(raw_text)
                     return parsed
                 elif res.status_code == 429:
-                    time.sleep(2)
+                    try:
+                        err_body = res.json()
+                        err_msg = err_body.get('error', {}).get('message', '')
+                        last_error = f"Model {model_name}: QUOTA_EXCEEDED (429) - {err_msg[:200]}"
+                    except Exception:
+                        last_error = f"Model {model_name}: QUOTA_EXCEEDED (429) - Free tier quota exhausted"
+                    if attempt == 0:
+                        time.sleep(3.0)
+                    break  # Move to next model on quota errors
                 else:
-                    last_error = f"Model {model_name} HTTP {res.status_code}: {res.text}"
+                    last_error = f"Model {model_name} HTTP {res.status_code}: {res.text[:200]}"
                     break
             except Exception as e:
-                last_error = str(e)
+                last_error = f"Model {model_name}: Exception - {str(e)}"
             
     # Universal fallback schema if offline or API limit reached
     return {

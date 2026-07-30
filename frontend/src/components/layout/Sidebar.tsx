@@ -2,22 +2,29 @@ import React from 'react';
 import { 
   LayoutDashboard, 
   Upload, 
-  Clock, 
-  Table
+  Table,
+  ScanSearch,
+  Layers,
+  Settings,
+  Activity
 } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   pendingCount?: number;
+  jobsCount?: number;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, pendingCount = 0 }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, pendingCount = 0, jobsCount = 0 }) => {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'upload', label: 'Upload & Process', icon: Upload },
-    { id: 'processing', label: 'Processing Queue', icon: Clock, badge: pendingCount ? `${pendingCount}` : undefined },
-    { id: 'results', label: 'Results (Live Excel)', icon: Table, highlight: true },
+    { id: 'inspector', label: 'Document Inspector', icon: ScanSearch },
+    { id: 'batch', label: 'Batch Processing', icon: Layers },
+    { id: 'results', label: 'Results (Live)', icon: Table, badge: jobsCount > 0 ? `${jobsCount}` : undefined, highlight: true },
+    { id: 'processing', label: 'Job Queue', icon: Activity, badge: pendingCount ? `${pendingCount}` : undefined },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'settings', label: 'Settings & API Key', icon: Settings },
   ];
 
   return (
@@ -73,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, pendi
 
       {/* Footer Info */}
       <div className="p-4 border-t border-slate-100 text-[11px] text-slate-400">
-        Bridgestone AI Extraction Engine v2.0
+        AI Extraction Engine v3.0
       </div>
     </aside>
   );

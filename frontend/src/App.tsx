@@ -7,6 +7,8 @@ import { Upload } from './pages/Upload';
 import { Processing } from './pages/Processing';
 import { Results } from './pages/Results';
 import { InvoiceProcessing } from './pages/InvoiceProcessing';
+import { BatchProcessing } from './pages/BatchProcessing';
+import { Settings } from './pages/Settings';
 
 import type { SystemKPIs, WorkerNode, JobRecord, LogEntry } from './types';
 
@@ -18,7 +20,7 @@ const emptyKPIs: SystemKPIs = {
 };
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>('upload');
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [kpis, setKpis] = useState<SystemKPIs>(emptyKPIs);
   const [workers, setWorkers] = useState<WorkerNode[]>([]);
@@ -27,7 +29,7 @@ export const App: React.FC = () => {
   // 100% Backend-Owned Job State
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [activeJobId, setActiveJobId] = useState<string | null>(() => {
-    return localStorage.getItem("current_active_job_id") || null;
+    return localStorage.getItem('current_active_job_id') || null;
   });
 
   const fetchJobs = async () => {
@@ -71,12 +73,12 @@ export const App: React.FC = () => {
 
     fetchData();
 
-    // Setup HTTP Polling Loop (1000ms) for Session Recovery & Live Updates
+    // HTTP polling every 2s for live job updates
     const pollInterval = setInterval(() => {
       fetchJobs();
-    }, 1000);
+    }, 2000);
 
-    // Setup WebSocket
+    // Setup WebSocket for real-time sync
     const wsUrl = `ws://${window.location.host}/ws`;
     let socket: WebSocket;
     try {
@@ -110,14 +112,15 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FCFCFC] flex text-slate-900 font-sans">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
         pendingCount={kpis.pendingDocuments}
+        jobsCount={jobs.filter(j => j.status === 'Completed').length}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Header 
+        <Header
           wsConnected={wsConnected}
           onRefresh={fetchJobs}
           title="Universal AI Document Intelligence Platform"
@@ -126,39 +129,45 @@ export const App: React.FC = () => {
 
         <main className="flex-1 overflow-y-auto pb-12">
           {activeTab === 'dashboard' && (
-            <Dashboard 
-              kpis={kpis} 
+            <Dashboard
+              kpis={kpis}
               schema={activeSchema}
-              recentRows={activeRows} 
-              onNavigate={setActiveTab} 
-            />
-          )}
-          {activeTab === 'upload' && (
-            <Upload 
+              recentRows={activeRows}
               onNavigate={setActiveTab}
             />
           )}
+          {activeTab === 'upload' && (
+            <Upload onNavigate={setActiveTab} />
+          )}
           {activeTab === 'inspector' && <InvoiceProcessing />}
+          {activeTab === 'batch' && (
+            <BatchProcessing
+              kpis={kpis}
+              workers={workers}
+              onNavigate={setActiveTab}
+            />
+          )}
           {activeTab === 'processing' && (
-            <Processing 
-              workers={workers} 
-              pendingTasks={kpis.pendingDocuments} 
+            <Processing
+              workers={workers}
+              pendingTasks={kpis.pendingDocuments}
               activeLocks={0}
               logs={logs}
             />
           )}
           {activeTab === 'results' && (
-            <Results 
+            <Results
               jobs={jobs}
               activeJobId={activeJobId}
               onSelectJob={(id) => {
                 setActiveJobId(id);
-                localStorage.setItem("current_active_job_id", id);
+                localStorage.setItem('current_active_job_id', id);
               }}
               onDeleteJob={handleDeleteJob}
-              onRefresh={fetchJobs} 
+              onRefresh={fetchJobs}
             />
           )}
+          {activeTab === 'settings' && <Settings />}
         </main>
       </div>
     </div>

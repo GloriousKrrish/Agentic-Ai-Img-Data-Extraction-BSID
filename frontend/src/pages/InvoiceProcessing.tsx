@@ -25,7 +25,8 @@ export const InvoiceProcessing: React.FC = () => {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [rotation, setRotation] = useState<number>(0);
   const [activeStage, setActiveStage] = useState<number>(0);
-  const [activeModel, setActiveModel] = useState<string>("gemini-3.5-flash");
+  const [activeModel, setActiveModel] = useState<string>("gemini-2.5-flash");
+  const [extractError, setExtractError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -83,6 +84,7 @@ export const InvoiceProcessing: React.FC = () => {
   const handleProcessDocument = async () => {
     if (!selectedFile) return;
     setIsProcessing(true);
+    setExtractError(null);
     setActiveStage(1);
 
     const formData = new FormData();
@@ -95,21 +97,39 @@ export const InvoiceProcessing: React.FC = () => {
       setTimeout(() => setActiveStage(5), 1600);
       setTimeout(() => setActiveStage(6), 2000);
 
+      // Use job system — creates a persistent backend job and polls for completion
       const res = await fetch("/api/extract/universal", {
         method: "POST",
         body: formData,
       });
 
       if (!res.ok) {
-        throw new Error("Failed to process document");
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || "Extraction failed");
       }
 
       const data = await res.json();
+
+      // Check if job failed due to quota
+      if (data.status === 'Failed') {
+        const errMsg = data.error || data.current_stage || 'Unknown error';
+        if (errMsg.includes('QUOTA_EXCEEDED') || errMsg.includes('429') || errMsg.includes('quota')) {
+          setExtractError('API_QUOTA');
+        } else {
+          setExtractError(errMsg);
+        }
+        setActiveStage(0);
+        return;
+      }
+
       setActiveStage(7);
       setExtractedDoc(data);
       localStorage.setItem("latest_universal_doc", JSON.stringify(data));
-    } catch (err) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       console.error(err);
+      setExtractError(msg);
+      setActiveStage(0);
     } finally {
       setIsProcessing(false);
     }
@@ -179,6 +199,7 @@ export const InvoiceProcessing: React.FC = () => {
                 onChange={handleFileChange} 
                 className="hidden" 
                 id="doc-upload-input"
+                accept="image/*,.pdf,.docx,.xlsx,.xls,.csv,.json,.xml,.txt,.zip"
               />
               <label htmlFor="doc-upload-input" className="cursor-pointer space-y-3 block">
                 <div className="w-16 h-16 rounded-2xl bg-[#E600120D] text-[#E60012] flex items-center justify-center mx-auto shadow-xs">
@@ -186,7 +207,7 @@ export const InvoiceProcessing: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-[#1E293B]">Select Any Document, Image, or File</p>
-                  <p className="text-xs text-[#64748B] mt-1">PDF, Image, Word, Excel, CSV, JSON, XML, TXT</p>
+                  <p className="text-xs text-[#64748B] mt-1">JPG · PNG · WEBP · PDF · DOCX · XLSX · CSV · JSON · XML</p>
                 </div>
                 <button type="button" className="px-4 py-2 bg-[#E60012] text-white text-xs font-semibold rounded-xl shadow-md">
                   Browse File
@@ -253,10 +274,24 @@ export const InvoiceProcessing: React.FC = () => {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    Infer Dynamic Schema & Extract
+                    Infer Dynamic Schema &amp; Extract
                   </>
                 )}
               </button>
+
+              {/* Error Display */}
+              {extractError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-800 space-y-1">
+                  {extractError === 'API_QUOTA' ? (
+                    <>
+                      <p className="font-bold">⚠️ Gemini API Quota Exceeded</p>
+                      <p>Your API key has hit its free tier limit. Go to <strong>Settings</strong> → paste a new key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="underline text-[#005BAC]">aistudio.google.com/apikey</a></p>
+                    </>
+                  ) : (
+                    <p>❌ Error: {extractError}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

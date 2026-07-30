@@ -121,11 +121,28 @@ Extraction Guidelines:
                         "status": "SUCCESS"
                     }
                 elif res.status_code == 429:
-                    time.sleep(2.5)
+                    # Parse retry-after time from error message if available
+                    try:
+                        err_body = res.json()
+                        err_msg = err_body.get('error', {}).get('message', '')
+                        last_error = f"Model {model_name}: QUOTA_EXCEEDED (429) - {err_msg[:200]}"
+                    except Exception:
+                        last_error = f"Model {model_name}: QUOTA_EXCEEDED (429) - Free tier quota exhausted"
+                    # Only wait on first attempt; skip on second to move to next model faster
+                    if attempt == 0:
+                        time.sleep(3.0)
+                    break  # Don't retry same model on quota errors, move to next
+                elif res.status_code == 400:
+                    try:
+                        err_body = res.json()
+                        last_error = f"Model {model_name}: BAD_REQUEST (400) - {err_body.get('error', {}).get('message', res.text)[:200]}"
+                    except Exception:
+                        last_error = f"Model {model_name}: BAD_REQUEST (400) - {res.text[:200]}"
+                    break
                 else:
-                    last_error = f"Model {model_name} HTTP {res.status_code}: {res.text}"
+                    last_error = f"Model {model_name} HTTP {res.status_code}: {res.text[:200]}"
                     break
             except Exception as e:
-                last_error = str(e)
+                last_error = f"Model {model_name}: Exception - {str(e)}"
             
     raise RuntimeError(f"All Gemini models failed extraction. Last error: {last_error}")
