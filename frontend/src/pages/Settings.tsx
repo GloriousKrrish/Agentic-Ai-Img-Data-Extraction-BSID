@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Key, Save, CheckCircle2, Sparkles, Cpu, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
 
-// Real, verified Gemini models as of 2025
+// Verified working models for this Gemini account (tested 2026-07-30)
 const AVAILABLE_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-1.5-flash-8b",
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-flash-latest",
+  "gemini-3-flash-preview",
+  "gemini-3.1-flash-image",
 ];
 
 type ApiStatus = 'idle' | 'testing' | 'ok' | 'quota' | 'invalid';

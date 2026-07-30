@@ -20,7 +20,7 @@ def load_config_vars():
     GEMINI_PRIMARY_MODEL = os.getenv("GEMINI_PRIMARY_MODEL", "gemini-3.5-flash")
     raw_priority = os.getenv(
         "MODELS_PRIORITY",
-        "gemini-2.5-flash,gemini-2.5-flash-lite"
+        "gemini-3.5-flash,gemini-3.1-flash-lite,gemini-flash-latest"
     )
     MODELS_PRIORITY = [m.strip() for m in raw_priority.split(",") if m.strip()]
     if GEMINI_PRIMARY_MODEL not in MODELS_PRIORITY:
