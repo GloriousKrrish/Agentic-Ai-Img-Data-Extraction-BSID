@@ -74,16 +74,13 @@ def determine_pipeline_type(file_bytes: bytes, filename: str, mime_type: str = "
 
 def _inspect_excel_or_csv_for_batch(file_bytes: bytes, ext: str) -> bool:
     """
-    Inspects Excel or CSV content to check if it's a batch queue containing image URLs or >20 dataset rows.
+    Inspects Excel or CSV content to check if it contains image URLs or >20 dataset rows.
     """
     try:
         if ext == '.csv':
             decoded = file_bytes.decode('utf-8', errors='ignore')
             lines = [line for line in decoded.splitlines() if line.strip()]
-            if len(lines) > 25:
-                return True
-            header = lines[0].lower() if lines else ""
-            if any(k in header for k in ["url", "image_url", "imageurl", "file_url", "doc_url"]):
+            if len(lines) > 25 or "http://" in decoded or "https://" in decoded:
                 return True
             return False
 
@@ -92,18 +89,18 @@ def _inspect_excel_or_csv_for_batch(file_bytes: bytes, ext: str) -> bool:
             wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
             sheet = wb.active
             row_count = 0
-            has_url_column = False
 
             for i, row in enumerate(sheet.iter_rows(values_only=True)):
                 if not row or not any(row):
                     continue
                 row_count += 1
-                if i == 0:
-                    headers = [str(cell).lower() for cell in row if cell is not None]
-                    if any(k in h for h in headers for k in ["url", "image_url", "imageurl", "file_url", "doc_url"]):
-                        has_url_column = True
+                row_str = " ".join([str(cell) for cell in row if cell is not None]).lower()
 
-                if row_count > 25 or has_url_column:
+                if "http://" in row_str or "https://" in row_str or any(k in row_str for k in ["url", "image", "images", "photo", "link", "invoice"]):
+                    wb.close()
+                    return True
+
+                if row_count > 25:
                     wb.close()
                     return True
 

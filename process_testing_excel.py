@@ -66,7 +66,7 @@ def process_testing_xlsx():
     print("[2] Downloading extracted structured data into new Excel file...")
     r_excel = requests.get(f"{BASE_URL}/api/jobs/{job_id}/download/excel")
     if r_excel.status_code == 200:
-        out_name = "extracted_testing_results.xlsx"
+        out_name = "extracted_testing_results_v2.xlsx"
         with open(out_name, "wb") as f_out:
             f_out.write(r_excel.content)
         print(f"[SUCCESS] Saved extracted data into brand new Excel file: '{out_name}' ({len(r_excel.content)} bytes)")

@@ -25,12 +25,16 @@ def generate_dynamic_excel(extracted_items: list[dict]) -> bytes:
     field_keys = []
     
     for item in extracted_items:
-        fields = item.get("extractedFields", {})
+        fields = item.get("fields") or item.get("extractedFields") or {}
         for k in fields.keys():
             if k not in field_keys:
                 field_keys.append(k)
                 
-    headers.extend([k.replace('_', ' ').title() for k in field_keys])
+    # If custom dynamic fields exist (e.g. from URL image extraction), output field keys directly
+    if field_keys:
+        headers = [k.replace('_', ' ').title() for k in field_keys]
+    else:
+        headers = ["File Name", "Document Category", "Confidence Score"]
     
     # 1. Header Styling
     ws.append(headers)
@@ -51,14 +55,15 @@ def generate_dynamic_excel(extracted_items: list[dict]) -> bytes:
         
     # 2. Append Data Rows
     for row_idx, item in enumerate(extracted_items, 2):
-        fields = item.get("extractedFields", {})
-        row = [
-            item.get("fileName", f"Document_{row_idx-1}"),
-            item.get("category", "General Document"),
-            f"{item.get('confidence', 95.0)}%"
-        ]
-        for fk in field_keys:
-            row.append(str(fields.get(fk, "") or ""))
+        fields = item.get("fields") or item.get("extractedFields") or {}
+        if field_keys:
+            row = [str(fields.get(fk, "") or "") for fk in field_keys]
+        else:
+            row = [
+                item.get("fileName", f"Document_{row_idx-1}"),
+                item.get("category", "General Document"),
+                f"{item.get('confidence', 95.0)}%"
+            ]
         ws.append(row)
         
         # Apply zebra striping and borders

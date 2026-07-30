@@ -254,47 +254,50 @@ class JobManager:
             # Check if Excel/CSV file contains image URLs
             excel_urls = []
             if parsed.get("file_type") in ["xlsx", "csv"]:
-                from backend.services.excel_service import extract_urls_from_excel_bytes
-                excel_urls = extract_urls_from_excel_bytes(content_bytes, filename)
+                from backend.services.invoice_engine import detect_url_column_in_excel, process_invoice_document, INVOICE_SEMANTIC_PROMPT_SCHEMA
+                excel_urls = detect_url_column_in_excel(content_bytes, filename)
 
             if excel_urls:
-                self.update_job_progress(job_id, "Extracting URLs", f"Found {len(excel_urls)} image links in Excel. Downloading & analyzing images...", 40.0)
+                self.update_job_progress(job_id, "Extracting URLs", f"Found {len(excel_urls)} document links in Excel. Processing with AI Vision Engine...", 40.0)
                 import requests
                 all_extracted_rows = []
-                common_schema = []
-                doc_category = "Batch Image Links Dataset"
-                doc_title = f"Extracted {len(excel_urls)} Image Links from {filename}"
+                discovered_schema_keys = set()
+                doc_category = "Intelligent Invoice Batch"
+                doc_title = f"Semantic Invoice Batch from {filename}"
 
                 for idx, item in enumerate(excel_urls[:15]):
                     u = item["url"]
                     try:
-                        self.update_job_progress(job_id, "Extracting", f"Downloading image {idx+1}/{len(excel_urls)}: {u[:40]}...", 40.0 + (idx / len(excel_urls)) * 40.0)
+                        self.update_job_progress(job_id, "Extracting", f"Downloading document {idx+1}/{len(excel_urls)}: {u[:40]}...", 40.0 + (idx / len(excel_urls)) * 40.0)
                         img_res = requests.get(u, timeout=15)
                         if img_res.status_code == 200 and len(img_res.content) > 100:
-                            proc_bytes, _ = preprocess_image(img_res.content)
-                            if not common_schema:
-                                schema_info = generate_dynamic_schema(proc_bytes, "image/jpeg")
-                                common_schema = schema_info.get("fields", [])
-                                doc_category = schema_info.get("documentCategory", doc_category)
-                            else:
-                                schema_info = {"documentCategory": doc_category, "fields": common_schema}
+                            content_type = img_res.headers.get("Content-Type", "image/jpeg").split(";")[0].strip().lower()
+                            mime_to_use = "application/pdf" if ("pdf" in u.lower() or "pdf" in content_type) else "image/jpeg"
+                            proc_bytes = img_res.content if mime_to_use == "application/pdf" else preprocess_image(img_res.content)[0]
 
-                            ext_res = extract_universal_document(proc_bytes, schema_info, "image/jpeg")
-                            for r in ext_res.get("rows", []):
-                                r["rowIndex"] = item.get("rowIndex", idx + 1)
-                                r["fields"]["imageUrl"] = u
-                                all_extracted_rows.append(r)
+                            fields_dict = process_invoice_document(proc_bytes, mime_to_use)
+                            if not fields_dict:
+                                # Fallback if specific schema returned empty
+                                ext_res = extract_universal_document(proc_bytes, INVOICE_SEMANTIC_PROMPT_SCHEMA, mime_to_use)
+                                if ext_res.get("rows") and len(ext_res["rows"]) > 0:
+                                    fields_dict = ext_res["rows"][0].get("fields", {})
+
+                            fields_dict["sourceUrl"] = u
+                            for k in fields_dict.keys():
+                                discovered_schema_keys.add(k)
+
+                            all_extracted_rows.append({
+                                "rowIndex": item.get("rowIndex", idx + 1),
+                                "fields": fields_dict,
+                                "status": "COMPLETED",
+                                "confidence": 95.0
+                            })
                     except Exception as e:
                         print(f"Error fetching URL {u}: {e}")
 
-                if common_schema:
-                    schema = [{"key": f.get("key"), "label": f.get("label", f.get("key"))} for f in common_schema if f.get("key")]
-                    if not any(col.get("key") == "imageUrl" for col in schema):
-                        schema.insert(0, {"key": "imageUrl", "label": "Image URL"})
-                else:
-                    schema = [{"key": "imageUrl", "label": "Image URL"}, {"key": "status", "label": "Status"}]
-
-                rows = all_extracted_rows if all_extracted_rows else [{"rowIndex": 1, "fields": {"imageUrl": "No valid images downloaded"}, "status": "FAILED"}]
+                # Build dynamic schema from all discovered fields
+                schema = [{"key": k, "label": k.replace('_', ' ').title()} for k in sorted(list(discovered_schema_keys))]
+                rows = all_extracted_rows if all_extracted_rows else [{"rowIndex": 1, "fields": {"sourceUrl": "No valid documents processed"}, "status": "FAILED"}]
             else:
                 # Standard single document processing
                 self.update_job_progress(job_id, "Generating Schema", "Inferring dynamic AI schema with Gemini", 50.0)

@@ -1,5 +1,7 @@
 import json
 import re
+import io
+import csv
 from pathlib import Path
 import openpyxl
 from backend.config import EXCEL_PATH, PROJECT_ENGINE_DIR
@@ -76,11 +78,12 @@ def read_excel_rows(file_path: Path = EXCEL_PATH) -> dict:
 
 def extract_urls_from_excel_bytes(file_bytes: bytes, filename: str) -> list[dict]:
     """
-    Parses Excel/CSV file bytes and extracts all image HTTP/HTTPS URL links.
+    Parses Excel/CSV file bytes and extracts all image HTTP/HTTPS URL links using regex.
     Returns: [{"rowIndex": 2, "url": "https://..."}]
     """
     ext = Path(filename).suffix.lower()
     urls_list = []
+    url_pattern = re.compile(r'https?://[^\s,\"\']+')
 
     try:
         if ext == '.csv':
@@ -89,8 +92,9 @@ def extract_urls_from_excel_bytes(file_bytes: bytes, filename: str) -> list[dict
             for row_idx, row in enumerate(reader, start=1):
                 for cell in row:
                     cell_str = str(cell).strip()
-                    if cell_str.startswith("http://") or cell_str.startswith("https://"):
-                        urls_list.append({"rowIndex": row_idx, "url": cell_str})
+                    match = url_pattern.search(cell_str)
+                    if match:
+                        urls_list.append({"rowIndex": row_idx, "url": match.group(0)})
         elif ext in ['.xlsx', '.xls']:
             wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
             sheet = wb.active
@@ -98,8 +102,9 @@ def extract_urls_from_excel_bytes(file_bytes: bytes, filename: str) -> list[dict
                 for col_idx in range(1, sheet.max_column + 1):
                     val = sheet.cell(row=row_idx, column=col_idx).value
                     val_str = str(val).strip() if val is not None else ""
-                    if val_str.startswith("http://") or val_str.startswith("https://"):
-                        urls_list.append({"rowIndex": row_idx, "url": val_str})
+                    match = url_pattern.search(val_str)
+                    if match:
+                        urls_list.append({"rowIndex": row_idx, "url": match.group(0)})
             wb.close()
     except Exception as e:
         print(f"Error extracting URLs from Excel: {e}")
