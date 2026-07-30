@@ -180,9 +180,22 @@ export const App: React.FC = () => {
               onRefresh={fetchJobState}
               activeJob={activeJob}
               allJobs={allJobs}
-              onSelectJob={(id) => {
+              onSelectJob={async (id) => {
                 setCurrentJobId(id);
                 localStorage.setItem('current_active_job_id', id);
+                try {
+                  const res = await fetch(getApiUrl(`/api/jobs/${id}`));
+                  if (res.ok) {
+                    const singleJob = await res.json();
+                    setActiveJob(singleJob);
+                    if (singleJob.schema && singleJob.rows) {
+                      setDataset({
+                        schema: singleJob.schema,
+                        rows: singleJob.rows
+                      });
+                    }
+                  }
+                } catch (e) {}
               }}
             />
           )}
