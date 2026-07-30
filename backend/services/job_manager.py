@@ -14,9 +14,25 @@ from backend.services.schema_generator import generate_dynamic_schema
 from backend.services.universal_extractor import extract_universal_document
 from backend.services.dynamic_exporter import generate_dynamic_excel, generate_dynamic_csv
 
-DB_PATH = BASE_DIR / "jobs.sqlite3"
-UPLOADS_DIR = BASE_DIR / "uploads"
-UPLOADS_DIR.mkdir(exist_ok=True)
+import tempfile
+
+IS_VERCEL = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
+
+if IS_VERCEL:
+    DB_PATH = Path(tempfile.gettempdir()) / "jobs.sqlite3"
+    UPLOADS_DIR = Path(tempfile.gettempdir()) / "uploads"
+else:
+    try:
+        test_file = BASE_DIR / ".write_test"
+        test_file.touch()
+        test_file.unlink()
+        DB_PATH = BASE_DIR / "jobs.sqlite3"
+        UPLOADS_DIR = BASE_DIR / "uploads"
+    except Exception:
+        DB_PATH = Path(tempfile.gettempdir()) / "jobs.sqlite3"
+        UPLOADS_DIR = Path(tempfile.gettempdir()) / "uploads"
+
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 class JobManager:
     def __init__(self, db_path: Path = DB_PATH):
@@ -91,9 +107,13 @@ class JobManager:
 
         self.add_log(job_id, "INFO", f"Job created for {filename}. Enqueued for background processing.")
 
-        # Start asynchronous execution in background thread
-        thread = threading.Thread(target=self._run_job_pipeline, args=(job_id,), daemon=True)
-        thread.start()
+        if IS_VERCEL:
+            # Serverless lambdas freeze background threads on return. Execute synchronously in Vercel request handler.
+            self._run_job_pipeline(job_id)
+        else:
+            # Start asynchronous execution in background thread
+            thread = threading.Thread(target=self._run_job_pipeline, args=(job_id,), daemon=True)
+            thread.start()
 
         return self.get_job(job_id)
 
