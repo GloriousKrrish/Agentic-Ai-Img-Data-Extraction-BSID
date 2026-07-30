@@ -1,15 +1,31 @@
 import React, { useState } from 'react';
-import type { SchemaColumn, DynamicRow } from '../types';
-import { Search, Download, RefreshCw } from 'lucide-react';
+import type { JobRecord } from '../types';
+import { Search, Download, RefreshCw, Loader2, CheckCircle2, AlertCircle, FileText, Trash2 } from 'lucide-react';
 
 interface ResultsProps {
-  schema: SchemaColumn[];
-  rows: DynamicRow[];
+  jobs: JobRecord[];
+  activeJobId?: string | null;
+  onSelectJob?: (jobId: string) => void;
   onRefresh: () => void;
+  onDeleteJob?: (jobId: string) => void;
 }
 
-export const Results: React.FC<ResultsProps> = ({ schema, rows, onRefresh }) => {
+export const Results: React.FC<ResultsProps> = ({ 
+  jobs, 
+  activeJobId, 
+  onSelectJob, 
+  onRefresh,
+  onDeleteJob 
+}) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(
+    activeJobId || localStorage.getItem("current_active_job_id") || (jobs.length > 0 ? jobs[0].job_id : null)
+  );
+
+  const activeJob = jobs.find(j => j.job_id === (selectedJobId || activeJobId)) || (jobs.length > 0 ? jobs[0] : null);
+
+  const schema = activeJob?.schema || [];
+  const rows = activeJob?.rows || [];
 
   const filteredRows = rows.filter(r => {
     if (!searchTerm.trim()) return true;
@@ -19,42 +35,139 @@ export const Results: React.FC<ResultsProps> = ({ schema, rows, onRefresh }) => 
     );
   });
 
-  const exportExcelFile = () => {
+  const handleDownload = (format: 'excel' | 'json' | 'csv') => {
+    if (!activeJob) return;
     const a = document.createElement("a");
-    a.href = "/api/excel-rows";
-    a.download = "extracted_data.xlsx";
+    a.href = `/api/jobs/${activeJob.job_id}/download/${format}`;
+    a.download = `${activeJob.job_id}_results.${format === 'excel' ? 'xlsx' : format}`;
     a.click();
   };
 
   return (
     <div className="p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Page Header */}
+      {/* Page Header & Backend Job Selector */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Dynamic Data Grid & Results</h2>
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" title="Live Data Sync"></span>
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Persistent Job Results & Data Grid</h2>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" title="Backend Live Sync"></span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">Real-time dynamic column structure auto-discovered by AI schema engine</p>
+          <p className="text-xs text-slate-500 mt-0.5">100% Backend-Owned Execution — SQLite Store (`jobs.sqlite3`)</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <button 
-            onClick={exportExcelFile}
-            className="px-4 py-2 bg-[#005BAC] hover:bg-[#004787] text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            Download Excel File
-          </button>
+          {/* Job Dropdown Selector */}
+          {jobs.length > 0 && (
+            <select
+              value={activeJob?.job_id || ""}
+              onChange={(e) => {
+                setSelectedJobId(e.target.value);
+                localStorage.setItem("current_active_job_id", e.target.value);
+                if (onSelectJob) onSelectJob(e.target.value);
+              }}
+              className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 shadow-xs focus:outline-none focus:border-[#E60012]"
+            >
+              {jobs.map(j => (
+                <option key={j.job_id} value={j.job_id}>
+                  {j.filename} ({j.status} - {j.progress.toFixed(0)}%) [{j.job_id}]
+                </option>
+              ))}
+            </select>
+          )}
+
+          {activeJob && (
+            <button 
+              onClick={() => handleDownload('excel')}
+              className="px-4 py-2 bg-[#005BAC] hover:bg-[#004787] text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              Download Excel
+            </button>
+          )}
+
           <button 
             onClick={onRefresh}
             className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl"
-            title="Refresh Rows"
+            title="Refresh Jobs from Backend"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {/* Active Job Progress & Stage Telemetry Card */}
+      {activeJob && (
+        <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#005BAC]" />
+                <span className="font-extrabold text-sm text-white">{activeJob.filename}</span>
+                <span className="text-xs text-slate-400 font-mono">({activeJob.job_id})</span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Category: <strong className="text-emerald-400">{activeJob.document_category || 'Detecting...'}</strong> | Created: {activeJob.created_at}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className={`px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5 ${
+                activeJob.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                activeJob.status === 'Failed' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse'
+              }`}>
+                {activeJob.status === 'Completed' ? <CheckCircle2 className="w-3.5 h-3.5" /> :
+                 activeJob.status === 'Failed' ? <AlertCircle className="w-3.5 h-3.5" /> :
+                 <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {activeJob.status}
+              </span>
+
+              {onDeleteJob && (
+                <button 
+                  onClick={() => onDeleteJob(activeJob.job_id)}
+                  className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800"
+                  title="Delete Job Record"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs font-bold">
+              <span className="text-slate-300 flex items-center gap-2">
+                {activeJob.status !== 'Completed' && activeJob.status !== 'Failed' && (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E60012]" />
+                )}
+                Stage: {activeJob.current_stage}
+              </span>
+              <span className="text-emerald-400 font-mono">{activeJob.progress.toFixed(0)}%</span>
+            </div>
+            <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-[#005BAC] to-emerald-500 h-full transition-all duration-500"
+                style={{ width: `${Math.max(activeJob.progress, 5)}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Job Logs */}
+          {activeJob.logs && activeJob.logs.length > 0 && (
+            <div className="bg-slate-950 rounded-xl p-3 font-mono text-[11px] max-h-28 overflow-y-auto space-y-1 text-slate-300">
+              {activeJob.logs.slice(-4).map((l, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="text-slate-500 text-[10px]">{l.timestamp}</span>
+                  <span className={l.level === 'ERROR' ? 'text-red-400 font-bold' : l.level === 'SUCCESS' ? 'text-emerald-400 font-bold' : 'text-slate-300'}>
+                    {l.message}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Search & Counter Bar */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
@@ -62,7 +175,7 @@ export const Results: React.FC<ResultsProps> = ({ schema, rows, onRefresh }) => 
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input 
             type="text" 
-            placeholder="Search across all fields..." 
+            placeholder="Search across all extracted fields..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#E60012]"
@@ -120,7 +233,14 @@ export const Results: React.FC<ResultsProps> = ({ schema, rows, onRefresh }) => 
               ) : (
                 <tr>
                   <td colSpan={Math.max(schema.length + 2, 1)} className="py-16 text-center text-slate-400 text-xs font-medium">
-                    No data rows loaded. Upload a document or spreadsheet to view extracted data.
+                    {activeJob && activeJob.status !== 'Completed' && activeJob.status !== 'Failed' ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#E60012]" />
+                        <span>Background AI Worker is extracting data ({activeJob.progress.toFixed(0)}%)...</span>
+                      </div>
+                    ) : (
+                      "No data rows loaded. Upload a document to create a persistent job."
+                    )}
                   </td>
                 </tr>
               )}

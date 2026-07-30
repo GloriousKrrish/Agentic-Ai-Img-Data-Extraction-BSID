@@ -7,7 +7,7 @@ interface UploadProps {
   onDatasetExtracted?: (dataset: { schema: SchemaColumn[]; rows: DynamicRow[] }) => void;
 }
 
-export const Upload: React.FC<UploadProps> = ({ onNavigate, onDatasetExtracted }) => {
+export const Upload: React.FC<UploadProps> = ({ onNavigate }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -32,43 +32,29 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onDatasetExtracted }
   const handleUniversalExtract = async () => {
     if (!selectedFile) return;
     setIsProcessing(true);
-    setStatusMessage(`Analyzing & inferring dynamic AI schema for ${selectedFile.name}...`);
+    setStatusMessage(`Creating persistent backend job for ${selectedFile.name}...`);
 
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      const res = await fetch("/api/extract/universal", {
+      const res = await fetch("/api/jobs", {
         method: "POST",
         body: formData
       });
 
       if (res.ok) {
         const data = await res.json();
-        localStorage.setItem("latest_universal_doc", JSON.stringify(data));
-        
-        const extractedSchema: SchemaColumn[] = data.schema || [];
-        const extractedRows: DynamicRow[] = data.rows || [];
-
-        if (extractedSchema.length > 0) {
-          localStorage.setItem("active_schema", JSON.stringify(extractedSchema));
-        }
-        if (extractedRows.length > 0) {
-          localStorage.setItem("active_rows", JSON.stringify(extractedRows));
-        }
-
-        if (onDatasetExtracted) {
-          onDatasetExtracted({ schema: extractedSchema, rows: extractedRows });
-        }
-
-        setStatusMessage(`Successfully classified as "${data.documentCategory || data.category || 'Document'}" with ${data.confidence || 95}% confidence!`);
-        setTimeout(() => onNavigate("results"), 1200);
+        const jobId = data.jobId;
+        localStorage.setItem("current_active_job_id", jobId);
+        setStatusMessage(`Job ${jobId} created! Background AI extraction running...`);
+        setTimeout(() => onNavigate("results"), 600);
       } else {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.detail || "Universal extraction failed");
+        throw new Error(errJson.detail || "Failed to create backend job");
       }
     } catch (e: any) {
-      setStatusMessage(`Extraction error: ${e.message || 'Failed to process document'}`);
+      setStatusMessage(`Error: ${e.message || 'Failed to create job'}`);
     } finally {
       setIsProcessing(false);
     }
@@ -79,11 +65,11 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onDatasetExtracted }
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#E6001210] text-[#E60012] rounded-full text-xs font-bold border border-[#E6001220]">
           <Sparkles className="w-3.5 h-3.5" />
-          Enterprise Universal AI Document Intelligence Platform (IDP)
+          Enterprise Persistent Job Manager & Universal AI Platform
         </div>
         <h1 className="text-3xl font-black text-[#1E293B] tracking-tight">Drop Anything Here</h1>
         <p className="text-xs text-slate-500 max-w-xl mx-auto">
-          Upload ANY PDF, scanned document, image, Word document, Excel spreadsheet, CSV, JSON, XML, TXT, or ZIP archive. Zero templates required.
+          Upload ANY PDF, scanned document, image, Word document, Excel spreadsheet, CSV, JSON, XML, TXT, or ZIP archive. Jobs run asynchronously on backend threads.
         </p>
       </div>
 
@@ -147,12 +133,12 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onDatasetExtracted }
           {isProcessing ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Running Universal AI Pipeline...
+              Enqueueing Persistent Job...
             </>
           ) : (
             <>
               <Sparkles className="w-4 h-4" />
-              Process & Auto-Discover Dynamic Schema
+              Enqueue Persistent Processing Job
             </>
           )}
         </button>

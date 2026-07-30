@@ -8,7 +8,7 @@ import { Processing } from './pages/Processing';
 import { Results } from './pages/Results';
 import { InvoiceProcessing } from './pages/InvoiceProcessing';
 
-import type { SystemKPIs, WorkerNode, SchemaColumn, DynamicRow, LogEntry } from './types';
+import type { SystemKPIs, WorkerNode, JobRecord, LogEntry } from './types';
 
 const emptyKPIs: SystemKPIs = {
   totalDocuments: 0,
@@ -22,51 +22,29 @@ export const App: React.FC = () => {
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [kpis, setKpis] = useState<SystemKPIs>(emptyKPIs);
   const [workers, setWorkers] = useState<WorkerNode[]>([]);
-  
-  const [schema, setSchema] = useState<SchemaColumn[]>(() => {
-    try {
-      const saved = localStorage.getItem("active_schema");
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
-
-  const [rows, setRows] = useState<DynamicRow[]>(() => {
-    try {
-      const saved = localStorage.getItem("active_rows");
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
-
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
-  const handleDatasetExtracted = (dataset: { schema: SchemaColumn[]; rows: DynamicRow[] }) => {
-    if (dataset.schema && dataset.schema.length > 0) {
-      setSchema(dataset.schema);
-      try { localStorage.setItem("active_schema", JSON.stringify(dataset.schema)); } catch (e) {}
-    }
-    if (dataset.rows && dataset.rows.length > 0) {
-      setRows(dataset.rows);
-      try { localStorage.setItem("active_rows", JSON.stringify(dataset.rows)); } catch (e) {}
-    }
+  // 100% Backend-Owned Job State
+  const [jobs, setJobs] = useState<JobRecord[]>([]);
+  const [activeJobId, setActiveJobId] = useState<string | null>(() => {
+    return localStorage.getItem("current_active_job_id") || null;
+  });
+
+  const fetchJobs = async () => {
+    try {
+      const res = await fetch('/api/jobs');
+      if (res.ok) {
+        const data = await res.json();
+        setJobs(data);
+      }
+    } catch (e) {}
   };
 
-  const handleFetchExcelData = async () => {
+  const handleDeleteJob = async (jobId: string) => {
     try {
-      const resRows = await fetch('/api/excel-rows');
-      if (resRows.ok) {
-        const data = await resRows.json();
-        if (data.schema && data.schema.length > 0) {
-          setSchema(data.schema);
-          try { localStorage.setItem("active_schema", JSON.stringify(data.schema)); } catch (e) {}
-        }
-        if (data.rows && data.rows.length > 0) {
-          setRows(data.rows);
-          try { localStorage.setItem("active_rows", JSON.stringify(data.rows)); } catch (e) {}
-        }
+      const res = await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' });
+      if (res.ok) {
+        await fetchJobs();
       }
     } catch (e) {}
   };
@@ -81,7 +59,7 @@ export const App: React.FC = () => {
           if (data.queue && data.queue.workers) setWorkers(data.queue.workers);
         }
 
-        await handleFetchExcelData();
+        await fetchJobs();
 
         const resLogs = await fetch('/api/logs');
         if (resLogs.ok) {
@@ -92,6 +70,11 @@ export const App: React.FC = () => {
     };
 
     fetchData();
+
+    // Setup HTTP Polling Loop (1000ms) for Session Recovery & Live Updates
+    const pollInterval = setInterval(() => {
+      fetchJobs();
+    }, 1000);
 
     // Setup WebSocket
     const wsUrl = `ws://${window.location.host}/ws`;
@@ -106,14 +89,7 @@ export const App: React.FC = () => {
           if (payload.type === 'SYNC_UPDATE') {
             if (payload.kpis) setKpis(payload.kpis);
             if (payload.queue && payload.queue.workers) setWorkers(payload.queue.workers);
-            if (payload.excelData) {
-              if (payload.excelData.schema && payload.excelData.schema.length > 0) {
-                setSchema(payload.excelData.schema);
-              }
-              if (payload.excelData.rows && payload.excelData.rows.length > 0) {
-                setRows(payload.excelData.rows);
-              }
-            }
+            if (payload.jobs) setJobs(payload.jobs);
             if (payload.logs) setLogs(payload.logs);
           }
         } catch (err) {}
@@ -123,9 +99,14 @@ export const App: React.FC = () => {
     }
 
     return () => {
+      clearInterval(pollInterval);
       if (socket) socket.close();
     };
   }, []);
+
+  const activeJob = jobs.find(j => j.job_id === activeJobId) || (jobs.length > 0 ? jobs[0] : null);
+  const activeSchema = activeJob?.schema || [];
+  const activeRows = activeJob?.rows || [];
 
   return (
     <div className="min-h-screen bg-[#FCFCFC] flex text-slate-900 font-sans">
@@ -138,24 +119,23 @@ export const App: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0">
         <Header 
           wsConnected={wsConnected}
-          onRefresh={handleFetchExcelData}
+          onRefresh={fetchJobs}
           title="Universal AI Document Intelligence Platform"
-          subtitle="Real-time Dynamic AI Data Extraction Engine"
+          subtitle="Enterprise Backend-Owned Persistent Job Manager"
         />
 
         <main className="flex-1 overflow-y-auto pb-12">
           {activeTab === 'dashboard' && (
             <Dashboard 
               kpis={kpis} 
-              schema={schema}
-              recentRows={rows} 
+              schema={activeSchema}
+              recentRows={activeRows} 
               onNavigate={setActiveTab} 
             />
           )}
           {activeTab === 'upload' && (
             <Upload 
-              onNavigate={setActiveTab} 
-              onDatasetExtracted={handleDatasetExtracted}
+              onNavigate={setActiveTab}
             />
           )}
           {activeTab === 'inspector' && <InvoiceProcessing />}
@@ -169,9 +149,14 @@ export const App: React.FC = () => {
           )}
           {activeTab === 'results' && (
             <Results 
-              schema={schema}
-              rows={rows} 
-              onRefresh={handleFetchExcelData} 
+              jobs={jobs}
+              activeJobId={activeJobId}
+              onSelectJob={(id) => {
+                setActiveJobId(id);
+                localStorage.setItem("current_active_job_id", id);
+              }}
+              onDeleteJob={handleDeleteJob}
+              onRefresh={fetchJobs} 
             />
           )}
         </main>

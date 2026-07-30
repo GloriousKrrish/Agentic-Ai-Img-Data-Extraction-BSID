@@ -23,6 +23,25 @@ export interface UniversalDataset {
   status?: string;
 }
 
+export interface JobRecord {
+  job_id: string;
+  filename: string;
+  file_type: string;
+  status: string;
+  current_stage: string;
+  current_worker?: string;
+  progress: number;
+  created_at: string;
+  started_at?: string;
+  completed_at?: string;
+  document_category?: string;
+  document_title?: string;
+  schema: SchemaColumn[];
+  rows: DynamicRow[];
+  logs: LogEntry[];
+  error?: string;
+}
+
 export interface WorkerNode {
   id: number;
   name: string;

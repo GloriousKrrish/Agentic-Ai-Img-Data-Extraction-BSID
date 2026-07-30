@@ -93,33 +93,33 @@ Extraction Guidelines:
                     data = res.json()
                     raw_text = data['candidates'][0]['content']['parts'][0]['text']
                     parsed_extracted = json.loads(raw_text)
-                
-                # Compute dynamic confidence score based on non-null field fill rate
-                total_fields = len(required_keys) if required_keys else 1
-                filled_count = sum(1 for k in required_keys if str(parsed_extracted.get(k, '') or '').strip())
-                confidence = round((filled_count / float(total_fields)) * 100, 1) if total_fields > 0 else 90.0
-                
-                schema = [{"key": f.get("key"), "label": f.get("label", f.get("key"))} for f in fields if f.get("key")]
-                row_fields = {col["key"]: str(parsed_extracted.get(col["key"]) or "").strip() for col in schema}
-                
-                return {
-                    "modelUsed": model_name,
-                    "documentCategory": category,
-                    "category": category,
-                    "documentTitle": schema_info.get("documentTitle", "Extracted Document"),
-                    "schema": schema,
-                    "rows": [
-                        {
-                            "rowIndex": 1,
-                            "fields": row_fields,
-                            "status": "COMPLETED",
-                            "confidence": max(confidence, 75.0)
-                        }
-                    ],
-                    "extractedFields": parsed_extracted,
-                    "confidence": max(confidence, 75.0),
-                    "status": "SUCCESS"
-                }
+                    
+                    # Compute dynamic confidence score based on non-null field fill rate
+                    total_fields = len(required_keys) if required_keys else 1
+                    filled_count = sum(1 for k in required_keys if str(parsed_extracted.get(k, '') or '').strip())
+                    confidence = round((filled_count / float(total_fields)) * 100, 1) if total_fields > 0 else 90.0
+                    
+                    schema = [{"key": f.get("key"), "label": f.get("label", f.get("key"))} for f in fields if f.get("key")]
+                    row_fields = {col["key"]: str(parsed_extracted.get(col["key"]) or "").strip() for col in schema}
+                    
+                    return {
+                        "modelUsed": model_name,
+                        "documentCategory": category,
+                        "category": category,
+                        "documentTitle": schema_info.get("documentTitle", "Extracted Document"),
+                        "schema": schema,
+                        "rows": [
+                            {
+                                "rowIndex": 1,
+                                "fields": row_fields,
+                                "status": "COMPLETED",
+                                "confidence": max(confidence, 75.0)
+                            }
+                        ],
+                        "extractedFields": parsed_extracted,
+                        "confidence": max(confidence, 75.0),
+                        "status": "SUCCESS"
+                    }
                 elif res.status_code == 429:
                     time.sleep(2.5)
                 else:

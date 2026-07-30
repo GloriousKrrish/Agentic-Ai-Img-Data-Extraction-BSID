@@ -20,6 +20,10 @@ dist/
 queue/*.lock_*
 results/*.json
 
+# Persistent Job Storage & Uploads
+jobs.sqlite3
+uploads/
+
 # IDE & OS files
 .DS_Store
 Thumbs.db
