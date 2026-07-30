@@ -33,41 +33,68 @@ export const App: React.FC = () => {
   const [dataset, setDataset] = useState<UniversalDocumentDataset>(emptyDataset);
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
-  const fetchDataset = async () => {
+  // Persistent Job State Management across navigation & refresh
+  const [currentJobId, setCurrentJobId] = useState<string>(() => {
+    return localStorage.getItem('current_active_job_id') || '';
+  });
+  const [activeJob, setActiveJob] = useState<any | null>(null);
+  const [allJobs, setAllJobs] = useState<any[]>([]);
+
+  const handleJobCreated = (jobId: string) => {
+    setCurrentJobId(jobId);
+    localStorage.setItem('current_active_job_id', jobId);
+  };
+
+  const fetchJobState = async () => {
     try {
-      const resRows = await fetch(getApiUrl('/api/excel-rows'));
-      if (resRows.ok) {
-        const data = await resRows.json();
-        if (data.schema && data.rows) {
-          setDataset(data);
-        } else if (Array.isArray(data)) {
-          setDataset({ schema: [], rows: data });
+      // 1. Fetch All User Jobs
+      const resJobs = await fetch(getApiUrl('/api/jobs'));
+      if (resJobs.ok) {
+        const jobsList = await resJobs.json();
+        setAllJobs(jobsList);
+
+        if (!currentJobId && jobsList.length > 0) {
+          const latestId = jobsList[0].job_id;
+          setCurrentJobId(latestId);
+          localStorage.setItem('current_active_job_id', latestId);
         }
+      }
+
+      // 2. Fetch Active Job Details if ID is present
+      const jobIdToFetch = currentJobId || localStorage.getItem('current_active_job_id');
+      if (jobIdToFetch) {
+        const resSingleJob = await fetch(getApiUrl(`/api/jobs/${jobIdToFetch}`));
+        if (resSingleJob.ok) {
+          const singleJob = await resSingleJob.json();
+          setActiveJob(singleJob);
+
+          if (singleJob.schema && singleJob.rows) {
+            setDataset({
+              schema: singleJob.schema,
+              rows: singleJob.rows
+            });
+          }
+          if (singleJob.logs && Array.isArray(singleJob.logs)) {
+            setLogs(singleJob.logs);
+          }
+        }
+      }
+
+      // 3. Fetch KPI & Status Summary
+      const resStatus = await fetch(getApiUrl('/api/status'));
+      if (resStatus.ok) {
+        const data = await resStatus.json();
+        if (data.kpis) setKpis(data.kpis);
+        if (data.queue && data.queue.workers) setWorkers(data.queue.workers);
       }
     } catch (e) {}
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const resStatus = await fetch(getApiUrl('/api/status'));
-        if (resStatus.ok) {
-          const data = await resStatus.json();
-          if (data.kpis) setKpis(data.kpis);
-          if (data.queue && data.queue.workers) setWorkers(data.queue.workers);
-        }
+    fetchJobState();
 
-        await fetchDataset();
-
-        const resLogs = await fetch(getApiUrl('/api/logs'));
-        if (resLogs.ok) {
-          const lData = await resLogs.json();
-          setLogs(lData);
-        }
-      } catch (e) {}
-    };
-
-    fetchData();
+    // 1000ms polling loop for state recovery & live progress synchronization
+    const interval = setInterval(fetchJobState, 1000);
 
     // Setup WebSocket
     const wsUrl = getWsUrl();
@@ -82,8 +109,9 @@ export const App: React.FC = () => {
           if (payload.type === 'SYNC_UPDATE') {
             if (payload.kpis) setKpis(payload.kpis);
             if (payload.queue && payload.queue.workers) setWorkers(payload.queue.workers);
-            if (payload.excelData) setDataset(payload.excelData);
-            if (payload.logs) setLogs(payload.logs);
+            if (payload.excelData && payload.excelData.schema && payload.excelData.schema.length > 0) {
+              setDataset(payload.excelData);
+            }
           }
         } catch (err) {}
       };
@@ -92,9 +120,10 @@ export const App: React.FC = () => {
     }
 
     return () => {
+      clearInterval(interval);
       if (socket) socket.close();
     };
-  }, []);
+  }, [currentJobId]);
 
   return (
     <div className="min-h-screen bg-[#FCFCFC] flex text-slate-900 font-sans">
@@ -108,7 +137,7 @@ export const App: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0">
         <Header 
           wsConnected={wsConnected}
-          onRefresh={fetchDataset}
+          onRefresh={fetchJobState}
           title="Universal AI Document Intelligence Platform"
           subtitle="Dynamic Schema Discovery & Extraction Engine"
         />
@@ -121,7 +150,12 @@ export const App: React.FC = () => {
               onNavigate={setActiveTab} 
             />
           )}
-          {activeTab === 'upload' && <Upload onNavigate={setActiveTab} />}
+          {activeTab === 'upload' && (
+            <Upload 
+              onNavigate={setActiveTab} 
+              onJobCreated={handleJobCreated}
+            />
+          )}
           {activeTab === 'inspector' && <InvoiceProcessing />}
           {activeTab === 'batch' && (
             <BatchProcessing 
@@ -136,12 +170,20 @@ export const App: React.FC = () => {
               pendingTasks={kpis.pendingDocuments} 
               activeLocks={0}
               logs={logs}
+              activeJob={activeJob}
+              onNavigate={setActiveTab}
             />
           )}
           {activeTab === 'results' && (
             <Results 
               dataset={dataset} 
-              onRefresh={fetchDataset} 
+              onRefresh={fetchJobState}
+              activeJob={activeJob}
+              allJobs={allJobs}
+              onSelectJob={(id) => {
+                setCurrentJobId(id);
+                localStorage.setItem('current_active_job_id', id);
+              }}
             />
           )}
           {activeTab === 'settings' && <Settings />}

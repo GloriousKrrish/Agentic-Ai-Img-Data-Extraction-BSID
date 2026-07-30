@@ -4,11 +4,12 @@ import { getApiUrl } from '../config/api';
 
 interface UploadProps {
   onNavigate: (tab: string) => void;
+  onJobCreated?: (jobId: string) => void;
 }
 
 type UploadState = 'idle' | 'uploading' | 'queued' | 'error';
 
-export const Upload: React.FC<UploadProps> = ({ onNavigate }) => {
+export const Upload: React.FC<UploadProps> = ({ onNavigate, onJobCreated }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -69,6 +70,7 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate }) => {
         const jobId = data.jobId;
         setCreatedJobId(jobId);
         localStorage.setItem('current_active_job_id', jobId);
+        if (onJobCreated) onJobCreated(jobId);
         setUploadState('queued');
         setStatusMessage(`Job ${jobId} created! AI is extracting data in the background.`);
       } else {
