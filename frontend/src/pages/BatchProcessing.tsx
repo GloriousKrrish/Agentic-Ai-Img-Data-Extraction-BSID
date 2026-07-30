@@ -14,6 +14,7 @@ import {
   Loader2,
   ExternalLink
 } from 'lucide-react';
+import { getApiUrl } from '../config/api';
 import type { SystemKPIs, WorkerNode } from '../types';
 
 interface BatchProcessingProps {
@@ -98,7 +99,7 @@ export const BatchProcessing: React.FC<BatchProcessingProps> = ({ kpis, workers,
         const formData = new FormData();
         formData.append('file', qf.file);
 
-        const res = await fetch('/api/jobs', {
+        const res = await fetch(getApiUrl('/api/jobs'), {
           method: 'POST',
           body: formData,
         });

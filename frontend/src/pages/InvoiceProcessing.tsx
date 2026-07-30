@@ -16,6 +16,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import type { UniversalDataset } from '../types';
+import { getApiUrl } from '../config/api';
 
 export const InvoiceProcessing: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -29,7 +30,7 @@ export const InvoiceProcessing: React.FC = () => {
   const [extractError, setExtractError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/settings")
+    fetch(getApiUrl("/api/settings"))
       .then(res => res.json())
       .then(data => {
         if (data.primaryModel) setActiveModel(data.primaryModel);
@@ -98,7 +99,7 @@ export const InvoiceProcessing: React.FC = () => {
       setTimeout(() => setActiveStage(6), 2000);
 
       // Use job system — creates a persistent backend job and polls for completion
-      const res = await fetch("/api/extract/universal", {
+      const res = await fetch(getApiUrl("/api/extract/universal"), {
         method: "POST",
         body: formData,
       });
@@ -138,7 +139,7 @@ export const InvoiceProcessing: React.FC = () => {
   const exportExcel = async () => {
     if (!extractedDoc) return;
     try {
-      const res = await fetch("/api/export/dynamic", {
+      const res = await fetch(getApiUrl("/api/export/dynamic"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items: [extractedDoc], format: "excel" })

@@ -1,45 +1,33 @@
-export interface SchemaColumn {
+export interface DynamicColumnSchema {
   key: string;
   label: string;
   type?: string;
 }
 
-export interface DynamicRow {
+export interface DynamicDataRow {
   rowIndex: number;
   fields: Record<string, any>;
-  status: string;
+  status: 'COMPLETED' | 'PENDING' | 'PROCESSING' | 'FAILED';
   confidence?: number;
 }
 
-export interface UniversalDataset {
-  schema: SchemaColumn[];
-  rows: DynamicRow[];
-  documentCategory?: string;
-  documentTitle?: string;
+export interface UniversalDocumentDataset {
+  schema: DynamicColumnSchema[];
+  rows: DynamicDataRow[];
+}
+
+export type UniversalDataset = UniversalDocumentDataset;
+
+export interface UniversalExtractedDocument {
   fileName?: string;
   fileType?: string;
   modelUsed?: string;
-  confidence?: number;
-  status?: string;
-}
-
-export interface JobRecord {
-  job_id: string;
-  filename: string;
-  file_type: string;
+  category?: string;
+  documentTitle?: string;
+  extractedFields: Record<string, any>;
+  schemaFields?: DynamicColumnSchema[];
+  confidence: number;
   status: string;
-  current_stage: string;
-  current_worker?: string;
-  progress: number;
-  created_at: string;
-  started_at?: string;
-  completed_at?: string;
-  document_category?: string;
-  document_title?: string;
-  schema: SchemaColumn[];
-  rows: DynamicRow[];
-  logs: LogEntry[];
-  error?: string;
 }
 
 export interface WorkerNode {

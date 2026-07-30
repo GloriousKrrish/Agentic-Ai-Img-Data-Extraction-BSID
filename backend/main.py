@@ -85,20 +85,64 @@ def test_api_key(req: dict):
     except Exception as e:
         return {"status": "ERROR", "message": str(e)}
 
+def compute_user_kpis():
+    all_jobs = job_manager.get_all_jobs(limit=500)
+    total = len(all_jobs)
+    processed = sum(1 for j in all_jobs if j.get("status") == "Completed")
+    pending = sum(1 for j in all_jobs if j.get("status") in ["Queued", "Analyzing", "Extracting", "Preprocessing", "Preparing"])
+    rate = round((processed / total * 100), 1) if total > 0 else 0.0
+    return {
+        "totalDocuments": total,
+        "processedDocuments": processed,
+        "pendingDocuments": pending,
+        "successRate": rate
+    }
+
+def compute_user_dataset():
+    all_jobs = job_manager.get_all_jobs(limit=100)
+    if not all_jobs:
+        return {"schema": [], "rows": []}
+    
+    schema = []
+    rows = []
+    seen_keys = set()
+    
+    for job in all_jobs:
+        job_schema = job.get("schema", [])
+        job_rows = job.get("rows", [])
+        for col in job_schema:
+            k = col.get("key")
+            if k and k not in seen_keys:
+                seen_keys.add(k)
+                schema.append({"key": k, "label": col.get("label", k)})
+        for r in job_rows:
+            rows.append(r)
+            
+    return {"schema": schema, "rows": rows}
+
 @app.get("/api/status")
 def get_system_status():
-    kpis = get_excel_kpis()
-    q_status = get_queue_status()
     active_jobs = job_manager.get_active_jobs()
     return {
-        "kpis": kpis,
-        "queue": q_status,
+        "kpis": compute_user_kpis(),
+        "queue": {
+            "pendingTasks": len(active_jobs),
+            "activeLocks": 0,
+            "pendingResults": 0,
+            "workers": []
+        },
         "activeJobs": active_jobs
     }
 
 @app.get("/api/excel-rows")
 def get_excel_rows_endpoint():
-    return read_excel_rows()
+    return compute_user_dataset()
+
+@app.post("/api/reset")
+def reset_system_state():
+    """Clears all jobs, resetting system state to 0 (Queue = 0, Results = 0, Workers = Idle)."""
+    job_manager.clear_all_jobs()
+    return {"status": "SUCCESS", "message": "System state reset. Queue = 0, Results = 0."}
 
 # =========================================================
 # JOB MANAGER REST APIs (PERSISTENT & BACKEND-OWNED)
@@ -277,16 +321,20 @@ async def websocket_endpoint(websocket: WebSocket):
     await ws_manager.connect(websocket)
     try:
         while True:
-            kpis = get_excel_kpis()
-            q_status = get_queue_status()
-            excel_data = read_excel_rows()
+            kpis = compute_user_kpis()
+            excel_data = compute_user_dataset()
             all_jobs = job_manager.get_all_jobs(limit=10)
             active_jobs = job_manager.get_active_jobs()
             
             await websocket.send_json({
                 "type": "SYNC_UPDATE",
                 "kpis": kpis,
-                "queue": q_status,
+                "queue": {
+                    "pendingTasks": len(active_jobs),
+                    "activeLocks": 0,
+                    "pendingResults": 0,
+                    "workers": []
+                },
                 "excelData": excel_data,
                 "jobs": all_jobs,
                 "activeJobs": active_jobs,

@@ -8,3 +8,4 @@ pypdf>=3.10.0
 python-docx>=0.8.11
 openpyxl>=3.1.0
 pandas>=2.0.0
+python-multipart>=0.0.6

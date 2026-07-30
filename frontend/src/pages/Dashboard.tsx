@@ -1,31 +1,32 @@
 import React from 'react';
-import type { SystemKPIs, SchemaColumn, DynamicRow } from '../types';
-import { Upload, Table, Clock } from 'lucide-react';
+import type { SystemKPIs, UniversalDocumentDataset } from '../types';
+import { Upload, Table, Clock, Sparkles } from 'lucide-react';
 
 interface DashboardProps {
   kpis: SystemKPIs;
-  schema: SchemaColumn[];
-  recentRows: DynamicRow[];
+  dataset: UniversalDocumentDataset;
   onNavigate: (tab: string) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ kpis, schema, recentRows, onNavigate }) => {
-  const isEngineActive = (kpis.pendingDocuments || 0) > 0;
-  const displaySchema = schema.slice(0, 5); // Show first 5 columns on dashboard preview
+export const Dashboard: React.FC<DashboardProps> = ({ kpis, dataset, onNavigate }) => {
+  const isEngineActive = kpis.pendingDocuments > 0;
+  const schema = dataset?.schema || [];
+  const rows = dataset?.rows || [];
 
   return (
     <div className="p-8 space-y-8 max-w-6xl mx-auto">
       {/* Title & Engine Status */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-700 mb-2">
-            Universal AI Document Intelligence Platform
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#E6001210] text-[#E60012] border border-[#E6001220] rounded-full text-xs font-bold mb-2">
+            <Sparkles className="w-3.5 h-3.5" />
+            Universal AI Document Intelligence Platform (IDP)
           </div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Universal AI Data Extraction Engine
+            Universal AI Document Intelligence Platform
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time multi-format document classification, dynamic schema discovery, and data grid synchronization.
+            Multimodal AI engine for real-time document classification, dynamic schema generation, and multi-format extraction.
           </p>
         </div>
 
@@ -51,8 +52,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpis, schema, recentRows, 
             <Upload className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">Upload Documents</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Upload any document, PDF, Excel, CSV, or Image format</p>
+            <h3 className="font-bold text-slate-900 text-sm">Drop Anything Here</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Upload PDFs, Images, Word, Excel, CSV, JSON, XML, or ZIP archives</p>
           </div>
         </div>
 
@@ -64,8 +65,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpis, schema, recentRows, 
             <Clock className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">Live Processing Queue</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Monitor parallel workers, queue locks, and live logs</p>
+            <h3 className="font-bold text-slate-900 text-sm">Live Pipeline Inspector</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Monitor real-time AI classification, OCR & dynamic schema inference</p>
           </div>
         </div>
 
@@ -78,42 +79,44 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpis, schema, recentRows, 
           </div>
           <div>
             <h3 className="font-bold text-slate-900 text-sm">Dynamic Results Grid</h3>
-            <p className="text-xs text-slate-500 mt-0.5">View auto-discovered schemas and dynamic column rows</p>
+            <p className="text-xs text-slate-500 mt-0.5">View & export auto-generated table schemas across documents</p>
           </div>
         </div>
       </div>
 
-      {/* Real Recent Processing Jobs */}
+      {/* Dynamic Extracted Document Stream */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">Recent Processing Rows</h3>
-            <p className="text-xs text-slate-500">Auto-discovered schema columns and live extracted records</p>
+            <h3 className="font-bold text-slate-900 text-sm">Dynamic Document Dataset Stream</h3>
+            <p className="text-xs text-slate-500">Auto-discovered schema columns & live extracted data rows</p>
           </div>
           <span className="text-xs font-semibold text-slate-600">
-            {kpis.processedDocuments || 0} / {kpis.totalDocuments || 0} Processed
+            {kpis.processedDocuments} / {kpis.totalDocuments} Documents Processed
           </span>
         </div>
 
-        {recentRows.length > 0 ? (
+        {rows.length > 0 && schema.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-500 uppercase font-semibold">
-                  <th className="py-2.5 px-3 whitespace-nowrap">Row #</th>
-                  {displaySchema.map(col => (
-                    <th key={col.key} className="py-2.5 px-3 whitespace-nowrap">{col.label}</th>
+                  <th className="py-2.5 px-3">Row #</th>
+                  {schema.slice(0, 5).map(col => (
+                    <th key={col.key} className="py-2.5 px-3 whitespace-nowrap">
+                      {col.label}
+                    </th>
                   ))}
-                  <th className="py-2.5 px-3 whitespace-nowrap">Status</th>
+                  <th className="py-2.5 px-3">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
-                {recentRows.slice(0, 6).map((row) => (
+                {rows.slice(0, 6).map((row) => (
                   <tr key={row.rowIndex}>
                     <td className="py-2.5 px-3 font-bold text-[#005BAC]">#{row.rowIndex}</td>
-                    {displaySchema.map(col => (
-                      <td key={col.key} className="py-2.5 px-3 max-w-xs truncate">
-                        {row.fields && row.fields[col.key] ? String(row.fields[col.key]) : '-'}
+                    {schema.slice(0, 5).map(col => (
+                      <td key={col.key} className="py-2.5 px-3">
+                        {String(row.fields[col.key] || '-')}
                       </td>
                     ))}
                     <td className="py-2.5 px-3">
@@ -130,7 +133,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ kpis, schema, recentRows, 
           </div>
         ) : (
           <div className="py-12 text-center text-slate-400 text-xs font-medium">
-            Waiting for document processing data...
+            Waiting for backend document dataset stream...
           </div>
         )}
       </div>

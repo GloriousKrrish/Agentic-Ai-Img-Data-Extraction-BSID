@@ -13,6 +13,7 @@ from backend.services.image_preprocessor import preprocess_image
 from backend.services.schema_generator import generate_dynamic_schema
 from backend.services.universal_extractor import extract_universal_document
 from backend.services.dynamic_exporter import generate_dynamic_excel, generate_dynamic_csv
+from backend.services.pipeline_router import determine_pipeline_type
 
 import tempfile
 
@@ -84,6 +85,11 @@ class JobManager:
         job_id = f"job-{uuid.uuid4().hex[:8]}"
         created_at = datetime.utcnow().isoformat() + "Z"
         
+        # Determine pipeline route automatically (Single Document vs Batch Dataset)
+        routing_info = determine_pipeline_type(file_bytes, filename, mime_type)
+        pipeline_type = routing_info["pipeline_type"]
+        category = routing_info["category"]
+        
         # Save file to disk
         file_ext = Path(filename).suffix
         safe_filename = f"{job_id}{file_ext}"
@@ -91,27 +97,30 @@ class JobManager:
         with open(saved_file_path, "wb") as f:
             f.write(file_bytes)
 
+        initial_stage = "Ingesting single document" if pipeline_type == "SINGLE_DOCUMENT" else "Enqueued in batch dataset queue"
+        worker_label = "Single Doc Engine" if pipeline_type == "SINGLE_DOCUMENT" else "Batch Worker Pool"
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
             INSERT INTO jobs (
                 job_id, filename, file_type, file_path, status, current_stage, 
-                current_worker, progress, created_at, schema_json, rows_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                current_worker, progress, created_at, document_category, schema_json, rows_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 job_id, filename, mime_type or "unknown", str(saved_file_path),
-                "Queued", "Job created in background queue", "Worker Node 1",
-                0.0, created_at, json.dumps([]), json.dumps([])
+                "Analyzing", initial_stage, worker_label,
+                0.0, created_at, category, json.dumps([]), json.dumps([])
             ))
             conn.commit()
 
-        self.add_log(job_id, "INFO", f"Job created for {filename}. Enqueued for background processing.")
+        self.add_log(job_id, "INFO", f"Pipeline Router: Assigned to {pipeline_type} ({routing_info['reason']})")
 
-        if IS_VERCEL:
-            # Serverless lambdas freeze background threads on return. Execute synchronously in Vercel request handler.
+        if pipeline_type == "SINGLE_DOCUMENT" or IS_VERCEL:
+            # Single documents execute directly via single document pipeline (NO legacy batch queue, NO worker script, NO row 991)
             self._run_job_pipeline(job_id)
         else:
-            # Start asynchronous execution in background thread
+            # Multi-row batch datasets start asynchronous background processing
             thread = threading.Thread(target=self._run_job_pipeline, args=(job_id,), daemon=True)
             thread.start()
 
@@ -206,6 +215,14 @@ class JobManager:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM job_logs WHERE job_id = ?", (job_id,))
             cursor.execute("DELETE FROM jobs WHERE job_id = ?", (job_id,))
+            conn.commit()
+            return True
+
+    def clear_all_jobs(self) -> bool:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM job_logs")
+            cursor.execute("DELETE FROM jobs")
             conn.commit()
             return True
 

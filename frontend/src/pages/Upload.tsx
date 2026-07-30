@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, Sparkles, FileText, CheckCircle2, Loader2, Image, FileSpreadsheet, FileCode, Archive, AlertCircle, ExternalLink } from 'lucide-react';
+import { getApiUrl } from '../config/api';
 
 interface UploadProps {
   onNavigate: (tab: string) => void;
@@ -58,7 +59,7 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate }) => {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const res = await fetch('/api/jobs', {
+      const res = await fetch(getApiUrl('/api/jobs'), {
         method: 'POST',
         body: formData,
       });

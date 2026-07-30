@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Key, Save, CheckCircle2, Sparkles, Cpu, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
+import { getApiUrl } from '../config/api';
 
 // Verified working models for this Gemini account (tested 2026-07-30)
 const AVAILABLE_MODELS = [
@@ -21,7 +22,7 @@ export const Settings: React.FC = () => {
   const [apiStatusMsg, setApiStatusMsg] = useState<string>('');
 
   useEffect(() => {
-    fetch("/api/settings")
+    fetch(getApiUrl("/api/settings"))
       .then(res => res.json())
       .then(data => {
         if (data.geminiApiKey) setApiKey(data.geminiApiKey);
@@ -82,7 +83,7 @@ export const Settings: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      const res = await fetch("/api/settings", {
+      const res = await fetch(getApiUrl("/api/settings"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
