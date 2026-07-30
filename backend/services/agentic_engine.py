@@ -1,4 +1,5 @@
 import io
+import os
 import re
 import csv
 import json
@@ -213,4 +214,14 @@ class ResilientExcelWriterAgent:
             row = [str(f_dict.get(fk, "") or "") for fk in field_keys]
             ws.append(row)
 
-        wb.save(output_path)
+        tmp_path = f"{output_path}.tmp"
+        try:
+            wb.save(tmp_path)
+            if os.path.exists(output_path):
+                os.remove(output_path)
+            os.replace(tmp_path, output_path)
+        except Exception:
+            try:
+                wb.save(output_path)
+            except Exception:
+                pass
