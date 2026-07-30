@@ -71,7 +71,7 @@ def get_excel_rows_endpoint():
 # JOB MANAGER REST APIs (PERSISTENT & BACKEND-OWNED)
 # =========================================================
 
-@app.post("/api/jobs")
+@app.post("/api/jobs", status_code=201)
 async def create_job_endpoint(file: UploadFile = File(...)):
     """
     Creates a new persistent processing job.
