@@ -6,29 +6,6 @@ INVALID_STRINGS = {
     "[object object]", "unknown", "missing", "nan", "nil", "none/none"
 }
 
-PRIORITY_FIELDS_MAP = {
-    "invoiceImageLink": "Invoice Image Link",
-    "customerName": "Customer Name",
-    "customerMobile": "Customer Mobile Number",
-    "vehicleNumber": "Vehicle Registration Number",
-    "invoiceNumber": "Invoice Number",
-    "invoiceDate": "Invoice Date",
-    "dealerName": "Dealer Name",
-    "dealerGst": "Dealer GST",
-    "dealerAddress": "Dealer Address",
-    "tyreSize": "Tyre Size",
-    "pattern": "Tyre Pattern",
-    "dotCode": "DOT Code",
-    "serialNumber": "Serial Number",
-    "quantity": "Quantity",
-    "unitCost": "Unit Cost",
-    "discount": "Discount",
-    "tax": "Tax",
-    "grandTotal": "Grand Total",
-    "confidenceScore": "Confidence Score",
-    "processingStatus": "Processing Status"
-}
-
 def clean_field_value(val) -> str:
     """
     Cleans raw extracted field value:
@@ -56,7 +33,7 @@ def clean_field_value(val) -> str:
     # Remove OCR garbage / non-printable control characters
     val_str = re.sub(r'[\x00-\x1F\x7F-\x9F]', '', val_str)
     
-    # Check if value consists purely of OCR symbol noise (e.g. '~~~', '$$$', '***', '---', '|||')
+    # Check if value consists purely of OCR symbol noise
     if re.match(r'^[~\$\*_\-\|\+\=\#\@\!\?\:\;\,\. ]+$', val_str):
         return ""
         
@@ -125,7 +102,7 @@ def normalize_field(key: str, val) -> str:
         return normalize_mobile(cleaned)
         
     # Amount / Cost / Price / Total / Tax / Discount
-    if any(k in key_lower for k in ["unitcost", "discount", "tax", "grandtotal", "amount", "cost", "price", "total"]):
+    if any(k in key_lower for k in ["unitcost", "discount", "tax", "grandtotal", "cost", "price", "total", "amount"]):
         norm_amt = normalize_amount(cleaned)
         return norm_amt if norm_amt else cleaned
 
@@ -153,19 +130,20 @@ def normalize_field(key: str, val) -> str:
     # Clean text whitespace
     return re.sub(r'\s+', ' ', cleaned).strip()
 
-def sanitize_extracted_dict(fields_dict: dict, min_confidence: float = 60.0, record_confidence: float = 95.0) -> dict:
+def sanitize_extracted_dict(fields_dict: dict, min_confidence: float = 0.0, record_confidence: float = 95.0) -> dict:
     """
     Sanitizes an entire record dictionary:
     - Filters out 'null', 'None', 'N/A', OCR garbage.
     - Normalizes mobile, dates, amounts, vehicle numbers, GST.
-    - Suppresses cell value into empty string '' if below min_confidence threshold.
+    - NEVER discards valid non-empty fields!
     """
-    if not fields_dict or record_confidence < min_confidence:
+    if not fields_dict:
         return {}
         
     sanitized = {}
     for key, val in fields_dict.items():
         norm_val = normalize_field(key, val)
-        sanitized[key] = norm_val
+        if norm_val:
+            sanitized[key] = norm_val
         
     return sanitized

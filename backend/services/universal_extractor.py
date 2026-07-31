@@ -12,8 +12,8 @@ def extract_universal_document(
     text_content: str = ""
 ) -> dict:
     """
-    Extracts structured values from ANY document based on the dynamically generated schema.
-    Returns dynamic key-value pairs, confidence score, and status.
+    Extracts structured values from ANY document based on dynamic schema.
+    Returns clean key-value pairs, confidence score, and status without discarding partial valid extractions.
     """
     api_key = config.GEMINI_API_KEY
     if not api_key:
@@ -22,7 +22,7 @@ def extract_universal_document(
     category = schema_info.get("documentCategory", "General Document")
     fields = schema_info.get("fields", [])
     
-    # Construct dynamic Pydantic/JSON Schema properties for Gemini structured output
+    # Construct dynamic JSON Schema properties for Gemini structured output
     json_properties = {}
     required_keys = []
     field_descriptions = []
@@ -45,22 +45,31 @@ def extract_universal_document(
         "required": required_keys
     }
     
-    prompt = f"""You are a high-precision Universal AI Data Extraction System.
+    prompt = f"""You are an Enterprise Expert Senior Business Data Analyst.
 Analyzing a document classified as: "{category}".
 
-Extract the following dynamically requested fields:
+Your mission is to extract EVERY SINGLE requested field from this invoice with 100% precision.
+
+Requested Fields:
 {chr(10).join(field_descriptions)}
 
-Extraction Guidelines:
-- Inspect printed text, handwritten text, signatures, seals, and tabular data carefully.
-- Return clean, exact values. If a field is not present in the document, return null.
-- Do not hallucinate or guess missing information.
+Strict Field Guidelines:
+- Customer Name: Look for buyer, customer, M/S, to, or person name at the top.
+- Customer Mobile: Look for 10-digit mobile numbers (e.g. 9848022334, 9440121991).
+- Vehicle Number: Look for Indian license plates (e.g. AP39NT1461, MH12AB1234, DL01A1234).
+- Invoice Number & Date: Look for bill no, invoice no, cash memo no, and date.
+- Dealer Details: Extract shop name, dealer GSTIN (15 characters), and shop address.
+- Tyre Specs: Extract tyre size (e.g. 235/65R17, 205/65 R16), pattern name (e.g. Wanderer, B390, Sturdo), DOT code (e.g. DOT 4223), and serial numbers.
+- Financial Summary: Extract item quantity, unit cost, discount, tax, and final grand total amount.
+
+Inspect printed text, handwritten text, stamp seals, and line item tables very carefully.
+If a field is missing on the physical invoice, return null. Do not hallucinate fake values.
 """
 
     parts = [{"text": prompt}]
     
     if text_content and len(text_content.strip()) > 20:
-        parts.append({"text": f"\nDOCUMENT TEXT CONTENT:\n{text_content[:4000]}"})
+        parts.append({"text": f"\nDOCUMENT OCR TEXT CONTENT:\n{text_content[:4000]}"})
         
     if file_bytes and len(file_bytes) > 0:
         base64_data = base64.b64encode(file_bytes).decode('utf-8')
@@ -79,14 +88,14 @@ Extraction Guidelines:
         "generationConfig": {
             "responseMimeType": "application/json",
             "responseSchema": gemini_schema,
-            "temperature": 0.1
+            "temperature": 0.0
         }
     }
     
     last_error = None
     for model_name in config.MODELS_PRIORITY:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
-        for attempt in range(2):
+        for attempt in range(3):
             try:
                 res = requests.post(url, json=payload, timeout=45)
                 if res.status_code == 200:
@@ -94,7 +103,6 @@ Extraction Guidelines:
                     raw_text = data['candidates'][0]['content']['parts'][0]['text']
                     parsed_extracted = json.loads(raw_text)
                     
-                    # Compute dynamic confidence score based on non-null field fill rate
                     total_fields = len(required_keys) if required_keys else 1
                     filled_count = sum(1 for k in required_keys if str(parsed_extracted.get(k, '') or '').strip())
                     confidence = round((filled_count / float(total_fields)) * 100, 1) if total_fields > 0 else 90.0
@@ -102,9 +110,8 @@ Extraction Guidelines:
                     schema = [{"key": f.get("key"), "label": f.get("label", f.get("key"))} for f in fields if f.get("key")]
                     row_fields = {col["key"]: parsed_extracted.get(col["key"]) for col in schema}
                     
-                    # Apply Business Analyst Quality Sanitization & Normalization
-                    sanitized_row_fields = sanitize_extracted_dict(row_fields, min_confidence=70.0, record_confidence=confidence)
-                    sanitized_extracted = sanitize_extracted_dict(parsed_extracted, min_confidence=70.0, record_confidence=confidence)
+                    sanitized_row_fields = sanitize_extracted_dict(row_fields, min_confidence=0.0, record_confidence=confidence)
+                    sanitized_extracted = sanitize_extracted_dict(parsed_extracted, min_confidence=0.0, record_confidence=confidence)
                     
                     return {
                         "modelUsed": model_name,
@@ -117,44 +124,26 @@ Extraction Guidelines:
                                 "rowIndex": 1,
                                 "fields": sanitized_row_fields,
                                 "status": "COMPLETED",
-                                "confidence": max(confidence, 75.0)
+                                "confidence": max(confidence, 60.0)
                             }
                         ],
                         "extractedFields": sanitized_extracted,
-                        "confidence": max(confidence, 75.0),
+                        "confidence": max(confidence, 60.0),
                         "status": "SUCCESS"
                     }
                 elif res.status_code == 429:
-                    # Parse retry-after time from error message if available
-                    try:
-                        err_body = res.json()
-                        err_msg = err_body.get('error', {}).get('message', '')
-                        last_error = f"Model {model_name}: QUOTA_EXCEEDED (429) - {err_msg[:200]}"
-                    except Exception:
-                        last_error = f"Model {model_name}: QUOTA_EXCEEDED (429) - Free tier quota exhausted"
-                    # Only wait on first attempt; skip on second to move to next model faster
-                    if attempt == 0:
-                        time.sleep(3.0)
-                    break  # Don't retry same model on quota errors, move to next
-                elif res.status_code in [400, 404]:
-                    try:
-                        err_body = res.json()
-                        last_error = f"Model {model_name}: HTTP {res.status_code} - {err_body.get('error', {}).get('message', res.text)[:200]}"
-                    except Exception:
-                        last_error = f"Model {model_name}: HTTP {res.status_code} - {res.text[:200]}"
-                    break
+                    last_error = f"Model {model_name}: HTTP 429 Quota Exceeded"
+                    time.sleep(2.0 * (attempt + 1))
                 else:
-                    last_error = f"Model {model_name} HTTP {res.status_code}: {res.text[:200]}"
-                    break
+                    last_error = f"Model {model_name}: HTTP {res.status_code}"
+                    time.sleep(1.0)
             except Exception as e:
                 last_error = f"Model {model_name}: Exception - {str(e)}"
+                time.sleep(1.0)
             
-    # Fallback response if API quota exceeded or offline
+    # Fallback response
     schema = [{"key": f.get("key"), "label": f.get("label", f.get("key"))} for f in fields if f.get("key")]
-    fallback_fields = {col["key"]: f"Extracted ({col['label']})" for col in schema}
-    if not fallback_fields:
-        fallback_fields = {"documentTitle": "Extracted Document Data", "status": "Processed"}
-        schema = [{"key": "documentTitle", "label": "Document Title"}, {"key": "status", "label": "Status"}]
+    fallback_fields = {col["key"]: "" for col in schema}
 
     return {
         "modelUsed": "fallback-engine",
@@ -166,12 +155,12 @@ Extraction Guidelines:
             {
                 "rowIndex": 1,
                 "fields": fallback_fields,
-                "status": "COMPLETED",
-                "confidence": 85.0
+                "status": "FAILED",
+                "confidence": 0.0
             }
         ],
         "extractedFields": fallback_fields,
-        "confidence": 85.0,
-        "status": "SUCCESS",
-        "notice": f"Quota/API limit reached on Gemini. Fallback data generated. {last_error or ''}"
+        "confidence": 0.0,
+        "status": "FAILED",
+        "notice": f"API error or limit reached. {last_error or ''}"
     }
