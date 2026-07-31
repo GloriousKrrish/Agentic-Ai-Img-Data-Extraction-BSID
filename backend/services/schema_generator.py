@@ -86,6 +86,13 @@ def generate_dynamic_schema(file_bytes: bytes, mime_type: str = "image/jpeg", te
                     if attempt == 0:
                         time.sleep(3.0)
                     break  # Move to next model on quota errors
+                elif res.status_code in [400, 404]:
+                    try:
+                        err_body = res.json()
+                        last_error = f"Model {model_name}: HTTP {res.status_code} - {err_body.get('error', {}).get('message', res.text)[:200]}"
+                    except Exception:
+                        last_error = f"Model {model_name}: HTTP {res.status_code} - {res.text[:200]}"
+                    break
                 else:
                     last_error = f"Model {model_name} HTTP {res.status_code}: {res.text[:200]}"
                     break

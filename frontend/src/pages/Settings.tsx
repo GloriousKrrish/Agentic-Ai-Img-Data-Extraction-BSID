@@ -2,20 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Key, Save, CheckCircle2, Sparkles, Cpu, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
 import { getApiUrl } from '../config/api';
 
-// Verified working models for this Gemini account (tested 2026-07-30)
+// Verified working models for this Gemini account
 const AVAILABLE_MODELS = [
-  "gemini-3.5-flash",
   "gemini-3.1-flash-lite",
   "gemini-flash-latest",
-  "gemini-3-flash-preview",
+  "gemini-3.5-flash",
   "gemini-3.1-flash-image",
+  "gemini-flash-lite-latest"
 ];
 
 type ApiStatus = 'idle' | 'testing' | 'ok' | 'quota' | 'invalid';
 
 export const Settings: React.FC = () => {
   const [apiKey, setApiKey] = useState<string>("");
-  const [primaryModel, setPrimaryModel] = useState<string>("gemini-2.5-flash");
+  const [primaryModel, setPrimaryModel] = useState<string>("gemini-3.1-flash-lite");
   const [modelsPriority, setModelsPriority] = useState<string[]>(AVAILABLE_MODELS);
   const [saved, setSaved] = useState<boolean>(false);
   const [apiStatus, setApiStatus] = useState<ApiStatus>('idle');

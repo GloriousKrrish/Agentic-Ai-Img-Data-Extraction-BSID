@@ -180,6 +180,8 @@ class ValidationAgent:
 # =====================================================================
 # AGENT 11: RESILIENT EXCEL WRITER
 # =====================================================================
+from backend.services.data_sanitizer import normalize_field
+
 class ResilientExcelWriterAgent:
     def write_workbook(self, items: list[dict], output_path: str):
         wb = openpyxl.Workbook()
@@ -202,6 +204,12 @@ class ResilientExcelWriterAgent:
 
         header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
         header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+        thin_border = Border(
+            left=Side(style='thin', color='CBD5E1'),
+            right=Side(style='thin', color='CBD5E1'),
+            top=Side(style='thin', color='CBD5E1'),
+            bottom=Side(style='thin', color='CBD5E1')
+        )
 
         for col_num in range(1, len(headers) + 1):
             cell = ws.cell(row=1, column=col_num)
@@ -211,8 +219,46 @@ class ResilientExcelWriterAgent:
 
         for row_idx, it in enumerate(items, 2):
             f_dict = it.get("fields", {})
-            row = [str(f_dict.get(fk, "") or "") for fk in field_keys]
-            ws.append(row)
+            row_fill = PatternFill(start_color="F8FAFC" if row_idx % 2 == 0 else "FFFFFF", fill_type="solid")
+            for col_idx, fk in enumerate(field_keys, 1):
+                raw_v = f_dict.get(fk)
+                norm_v = normalize_field(fk, raw_v)
+                cell = ws.cell(row=row_idx, column=col_idx)
+                
+                if not norm_v:
+                    cell.value = None
+                else:
+                    fk_lower = fk.lower()
+                    if any(num_k in fk_lower for num_k in ["amount", "cost", "price", "total", "salary", "revenue", "quantity", "units"]):
+                        try:
+                            if '.' in norm_v:
+                                cell.value = float(norm_v)
+                                cell.number_format = '#,##0.00'
+                            else:
+                                cell.value = int(norm_v)
+                                cell.number_format = '#,##0'
+                        except ValueError:
+                            cell.value = norm_v
+                    else:
+                        cell.value = norm_v
+
+                cell.fill = row_fill
+                cell.border = thin_border
+                cell.font = Font(name="Calibri", size=10)
+                
+                fk_lower = fk.lower()
+                if any(num_k in fk_lower for num_k in ["amount", "cost", "price", "total", "salary", "revenue", "quantity"]):
+                    cell.alignment = Alignment(horizontal="right", vertical="center")
+                elif any(id_k in fk_lower for id_k in ["number", "id", "code", "mobile", "phone", "date", "vehicle"]):
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                else:
+                    cell.alignment = Alignment(horizontal="left", vertical="center")
+
+        # Auto column widths
+        for col in ws.columns:
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            col_letter = openpyxl.utils.get_column_letter(col[0].column)
+            ws.column_dimensions[col_letter].width = max(max_len + 5, 14)
 
         tmp_path = f"{output_path}.tmp"
         try:

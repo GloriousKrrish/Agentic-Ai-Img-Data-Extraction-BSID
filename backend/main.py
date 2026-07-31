@@ -40,8 +40,8 @@ class BatchStartRequest(BaseModel):
 
 class SettingsUpdateRequest(BaseModel):
     geminiApiKey: str
-    primaryModel: str = "gemini-2.5-flash"
-    modelsPriority: list[str] = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+    primaryModel: str = "gemini-3.1-flash-lite"
+    modelsPriority: list[str] = ["gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash"]
 
 @app.get("/")
 def read_root():
@@ -66,7 +66,7 @@ def test_api_key(req: dict):
     """Test a Gemini API key and return its status"""
     import requests as req_lib
     key = req.get("apiKey", "").strip()
-    model = req.get("model", "gemini-2.0-flash-lite")
+    model = req.get("model", "gemini-3.1-flash-lite")
     if not key:
         return {"status": "INVALID", "message": "No API key provided"}
     try:

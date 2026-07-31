@@ -4,39 +4,32 @@ import csv
 import requests
 from pathlib import Path
 import openpyxl
-from backend.services.schema_generator import generate_dynamic_schema
 from backend.services.universal_extractor import extract_universal_document
+from backend.services.data_sanitizer import sanitize_extracted_dict
 
-# Comprehensive Semantic Field Extraction Schema for Invoices/Receipts
+# 20 Priority Columns Standardized Enterprise Schema
 INVOICE_SEMANTIC_PROMPT_SCHEMA = {
     "documentCategory": "Invoice / Transaction Document",
-    "documentTitle": "Intelligent Extracted Invoice Data",
-    "summary": "Extracted semantic key-value fields from invoice or transaction document",
+    "documentTitle": "Enterprise Cognitive Invoice Data Extraction",
+    "summary": "Extracted semantic key-value fields from invoice document with business understanding",
     "fields": [
-        {"key": "invoiceNumber", "label": "Invoice Number", "type": "string", "description": "Invoice number, bill number, or invoice reference code"},
-        {"key": "invoiceDate", "label": "Invoice Date", "type": "string", "description": "Date invoice was issued (DD/MM/YYYY or YYYY-MM-DD)"},
         {"key": "customerName", "label": "Customer Name", "type": "string", "description": "Full name of buyer or customer"},
-        {"key": "customerMobile", "label": "Customer Mobile", "type": "string", "description": "Customer phone number or mobile number"},
-        {"key": "vehicleNumber", "label": "Vehicle Number", "type": "string", "description": "Vehicle registration number (e.g. AP39NT1461, MH12AB1234)"},
-        {"key": "vehicleModel", "label": "Vehicle Model", "type": "string", "description": "Vehicle model name (e.g. Swift, Innova, Creta)"},
-        {"key": "vehicleBrand", "label": "Vehicle Brand", "type": "string", "description": "Vehicle brand/make (e.g. Maruti, Toyota, Hyundai)"},
-        {"key": "tyreSize", "label": "Tyre Size", "type": "string", "description": "Tyre specification or size code (e.g. 235/65R17, 185/65 R15)"},
-        {"key": "pattern", "label": "Pattern / Tread", "type": "string", "description": "Tyre pattern or tread design name"},
-        {"key": "dotCode", "label": "DOT Code", "type": "string", "description": "DOT manufacturing batch code"},
-        {"key": "serialNumber", "label": "Serial Number", "type": "string", "description": "Tyre or product serial number"},
-        {"key": "hsn", "label": "HSN / SAC Code", "type": "string", "description": "HSN code for GST tax classification"},
-        {"key": "gstNumber", "label": "Customer GST Number", "type": "string", "description": "GSTIN number of customer"},
-        {"key": "dealerName", "label": "Dealer / Seller Name", "type": "string", "description": "Name of dealership, shop, or company issuing invoice"},
-        {"key": "dealerGst", "label": "Dealer GSTIN", "type": "string", "description": "GSTIN number of dealer or seller"},
+        {"key": "customerMobile", "label": "Customer Mobile Number", "type": "string", "description": "10-digit mobile number starting with 6-9"},
+        {"key": "vehicleNumber", "label": "Vehicle Registration Number", "type": "string", "description": "Vehicle registration number (e.g. AP39NT1461)"},
+        {"key": "invoiceNumber", "label": "Invoice Number", "type": "string", "description": "Invoice number or bill reference"},
+        {"key": "invoiceDate", "label": "Invoice Date", "type": "string", "description": "Date invoice was issued (DD/MM/YYYY or YYYY-MM-DD)"},
+        {"key": "dealerName", "label": "Dealer Name", "type": "string", "description": "Name of dealership, shop, or company issuing invoice"},
+        {"key": "dealerGst", "label": "Dealer GST", "type": "string", "description": "15-character GSTIN number of dealer or seller"},
         {"key": "dealerAddress", "label": "Dealer Address", "type": "string", "description": "Full address of dealer"},
+        {"key": "tyreSize", "label": "Tyre Size", "type": "string", "description": "Tyre specification size code (e.g. 235/65R17)"},
+        {"key": "pattern", "label": "Tyre Pattern", "type": "string", "description": "Tyre pattern or tread design name"},
+        {"key": "dotCode", "label": "DOT Code", "type": "string", "description": "DOT manufacturing batch code (e.g. DOT 4223)"},
+        {"key": "serialNumber", "label": "Serial Number", "type": "string", "description": "Product or tyre serial number"},
+        {"key": "quantity", "label": "Quantity", "type": "number", "description": "Number of units purchased"},
         {"key": "unitCost", "label": "Unit Cost", "type": "number", "description": "Price per single unit"},
-        {"key": "quantity", "label": "Quantity", "type": "number", "description": "Number of units or items purchased"},
-        {"key": "totalCost", "label": "Total Cost / Subtotal", "type": "number", "description": "Subtotal cost before tax and discount"},
-        {"key": "discount", "label": "Discount Amount", "type": "number", "description": "Discount amount applied"},
-        {"key": "taxAmount", "label": "Tax Amount (GST/VAT)", "type": "number", "description": "Total tax amount"},
-        {"key": "grandTotal", "label": "Grand Total", "type": "number", "description": "Final total payable amount"},
-        {"key": "paymentMode", "label": "Payment Mode", "type": "string", "description": "Payment mode (Cash, UPI, Credit Card, Bank Transfer)"},
-        {"key": "remarks", "label": "Remarks / Notes", "type": "string", "description": "Additional notes, terms, or comments"}
+        {"key": "discount", "label": "Discount", "type": "number", "description": "Discount amount applied"},
+        {"key": "tax", "label": "Tax", "type": "number", "description": "Total GST or tax amount"},
+        {"key": "grandTotal", "label": "Grand Total", "type": "number", "description": "Final total payable amount"}
     ]
 }
 
@@ -75,19 +68,21 @@ def detect_url_column_in_excel(file_bytes: bytes, filename: str) -> list[dict]:
 
     return urls
 
-def process_invoice_document(doc_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
+def process_invoice_document(doc_bytes: bytes, mime_type: str = "image/jpeg", text_content: str = "") -> dict:
     """
-    Processes an invoice document (image or PDF) through Vision AI and extracts all semantic fields.
+    Processes an invoice document through Vision AI and extracts priority semantic fields.
     """
     try:
         ext_res = extract_universal_document(
             doc_bytes, 
             INVOICE_SEMANTIC_PROMPT_SCHEMA, 
-            mime_type
+            mime_type,
+            text_content=text_content
         )
         rows = ext_res.get("rows", [])
         if rows and len(rows) > 0:
-            return rows[0].get("fields", {})
+            fields = rows[0].get("fields", {})
+            return sanitize_extracted_dict(fields, min_confidence=60.0)
         return {}
     except Exception as e:
         print(f"Error processing invoice document: {e}")

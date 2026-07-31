@@ -82,7 +82,7 @@ if ($null -ne $modelsLine) {
     $modelsStr = ($modelsLine -split "=", 2)[1].Trim()
     $models = @($modelsStr -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" })
 } else {
-    $models = @("gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-1.5-flash")
+    $models = @("gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash", "gemini-3.1-flash-image", "gemini-flash-lite-latest")
 }
 
 $primaryLine = $envContent | Where-Object { $_ -like "GEMINI_PRIMARY_MODEL*" }
@@ -257,20 +257,20 @@ try {
                 }
                 Write-Host "API Call Error ($modelName): $_ (Status: $status)" -ForegroundColor Red
                 
-                if ($status -eq 429 -or $_.Message -like "*Too Many Requests*") {
+                if ($status -eq 429 -or $status -eq 404 -or $status -eq 400 -or $_.Message -like "*Too Many Requests*") {
                     $currentModelIndex++
                     if ($currentModelIndex -ge $models.Count) {
-                        Write-Host "All models rate-limited/exhausted. Sleeping 30s before retry..." -ForegroundColor Yellow
+                        Write-Host "All fallback models rate-limited or exhausted. Sleeping 30s before retry..." -ForegroundColor Yellow
                         $currentModelIndex = 0
                         Start-Sleep -Seconds 30
                         $retries--
                     } else {
-                        Write-Host "Model $modelName limit reached. Falling back to $($models[$currentModelIndex])..." -ForegroundColor Yellow
+                        Write-Host "Model $modelName unavailable/exhausted (Status $status). Falling back to $($models[$currentModelIndex])..." -ForegroundColor Yellow
                     }
                 }
                 else {
-                    Write-Host "Sleeping 10 seconds before retry..." -ForegroundColor Yellow
-                    Start-Sleep -Seconds 10
+                    Write-Host "Sleeping 5 seconds before retry..." -ForegroundColor Yellow
+                    Start-Sleep -Seconds 5
                     $retries--
                 }
             }

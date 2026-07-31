@@ -258,46 +258,47 @@ class JobManager:
                 excel_urls = detect_url_column_in_excel(content_bytes, filename)
 
             if excel_urls:
-                self.update_job_progress(job_id, "Extracting URLs", f"Found {len(excel_urls)} document links in Excel. Processing with AI Vision Engine...", 40.0)
-                import requests
+                self.update_job_progress(job_id, "Extracting URLs", f"Found {len(excel_urls)} document links in Excel. Launching Parallel Cognitive AI Employee Pool...", 40.0)
+                from backend.agents.supervisor import SupervisorAgent
+                from backend.agents.excel_writer_agent import PRIORITY_COLUMNS
+                
+                supervisor = SupervisorAgent(max_workers=10)
+                master_schema = {"documentCategory": "Enterprise Invoice Batch", "fields": PRIORITY_COLUMNS}
+                
                 all_extracted_rows = []
-                discovered_schema_keys = set()
-                doc_category = "Intelligent Invoice Batch"
-                doc_title = f"Semantic Invoice Batch from {filename}"
+                completed_count = 0
+                total_urls = len(excel_urls)
+                
+                import concurrent.futures
+                def process_url_task(task_item):
+                    u = task_item["url"]
+                    r_idx = task_item.get("rowIndex", 1)
+                    return supervisor.process_single_task({"url": u, "rowIndex": r_idx}, master_schema, f"Worker-{(r_idx % 10) + 1}")
+                
+                with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                    futures = [executor.submit(process_url_task, item) for item in excel_urls]
+                    for future in concurrent.futures.as_completed(futures):
+                        completed_count += 1
+                        pct = 40.0 + (completed_count / float(total_urls)) * 50.0
+                        self.update_job_progress(job_id, "Extracting", f"Processed {completed_count}/{total_urls} invoices ({pct:.0f}%)", pct)
+                        try:
+                            res = future.result()
+                            if res["success"]:
+                                res_fields = res["fields"]
+                                res_fields["invoiceImageLink"] = res["url"]
+                                all_extracted_rows.append({
+                                    "rowIndex": res["rowIndex"],
+                                    "fields": res_fields,
+                                    "status": res.get("status", "COMPLETED"),
+                                    "confidence": res.get("confidence", 95.0)
+                                })
+                        except Exception as ex:
+                            print(f"Error processing invoice row: {ex}")
 
-                for idx, item in enumerate(excel_urls[:15]):
-                    u = item["url"]
-                    try:
-                        self.update_job_progress(job_id, "Extracting", f"Downloading document {idx+1}/{len(excel_urls)}: {u[:40]}...", 40.0 + (idx / len(excel_urls)) * 40.0)
-                        img_res = requests.get(u, timeout=15)
-                        if img_res.status_code == 200 and len(img_res.content) > 100:
-                            content_type = img_res.headers.get("Content-Type", "image/jpeg").split(";")[0].strip().lower()
-                            mime_to_use = "application/pdf" if ("pdf" in u.lower() or "pdf" in content_type) else "image/jpeg"
-                            proc_bytes = img_res.content if mime_to_use == "application/pdf" else preprocess_image(img_res.content)[0]
-
-                            fields_dict = process_invoice_document(proc_bytes, mime_to_use)
-                            if not fields_dict:
-                                # Fallback if specific schema returned empty
-                                ext_res = extract_universal_document(proc_bytes, INVOICE_SEMANTIC_PROMPT_SCHEMA, mime_to_use)
-                                if ext_res.get("rows") and len(ext_res["rows"]) > 0:
-                                    fields_dict = ext_res["rows"][0].get("fields", {})
-
-                            fields_dict["sourceUrl"] = u
-                            for k in fields_dict.keys():
-                                discovered_schema_keys.add(k)
-
-                            all_extracted_rows.append({
-                                "rowIndex": item.get("rowIndex", idx + 1),
-                                "fields": fields_dict,
-                                "status": "COMPLETED",
-                                "confidence": 95.0
-                            })
-                    except Exception as e:
-                        print(f"Error fetching URL {u}: {e}")
-
-                # Build dynamic schema from all discovered fields
-                schema = [{"key": k, "label": k.replace('_', ' ').title()} for k in sorted(list(discovered_schema_keys))]
-                rows = all_extracted_rows if all_extracted_rows else [{"rowIndex": 1, "fields": {"sourceUrl": "No valid documents processed"}, "status": "FAILED"}]
+                schema = PRIORITY_COLUMNS
+                rows = sorted(all_extracted_rows, key=lambda x: x["rowIndex"]) if all_extracted_rows else [{"rowIndex": 1, "fields": {"invoiceImageLink": "No valid documents processed"}, "status": "FAILED"}]
+                doc_category = "Enterprise Invoice Batch"
+                doc_title = f"Cognitive AI Invoice Batch from {filename}"
             else:
                 # Standard single document processing
                 self.update_job_progress(job_id, "Generating Schema", "Inferring dynamic AI schema with Gemini", 50.0)

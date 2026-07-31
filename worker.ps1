@@ -83,7 +83,7 @@ if ($null -ne $modelsLine) {
     $modelsStr = ($modelsLine -split "=", 2)[1].Trim()
     $models = @($modelsStr -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" })
 } else {
-    $models = @("gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-1.5-flash")
+    $models = @("gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash", "gemini-3.1-flash-image", "gemini-flash-lite-latest")
 }
 
 $primaryLine = $envContent | Where-Object { $_ -like "GEMINI_PRIMARY_MODEL*" }
@@ -265,29 +265,29 @@ while ($true) {
             
             Write-Host "Worker ${WorkerId} (Row $r) Model $modelName Error - $_ (Status: $status, IsQuota: $isQuotaError)" -ForegroundColor Red
             
-            if ($status -eq 429 -and $isQuotaError) {
-                # Quota exhausted! Try the next model after short delay
+            if (($status -eq 429 -and $isQuotaError) -or $status -eq 404 -or $status -eq 400) {
+                # Quota exhausted or model deprecated/not found! Try next model
                 $currentModelIndex++
                 if ($currentModelIndex -ge $models.Count) {
-                    Write-Host "Worker ${WorkerId} - All fallback models are exhausted. Sleeping 60s before retrying..." -ForegroundColor Yellow
+                    Write-Host "Worker ${WorkerId} - All fallback models are exhausted. Sleeping 30s before retrying..." -ForegroundColor Yellow
                     $currentModelIndex = 0
-                    Start-Sleep -Seconds 60
+                    Start-Sleep -Seconds 30
                 } else {
-                    Write-Host "Worker ${WorkerId} - Quota exhausted for $modelName. Falling back to $($models[$currentModelIndex])..." -ForegroundColor Yellow
-                    Start-Sleep -Seconds 5
+                    Write-Host "Worker ${WorkerId} - Model $modelName unavailable/exhausted (Status $status). Falling back to $($models[$currentModelIndex])..." -ForegroundColor Yellow
+                    Start-Sleep -Seconds 2
                     continue
                 }
             }
             elseif ($status -eq 429) {
-                # Rate limit hit (e.g. RPM limit). Sleep 30s and retry.
-                Write-Host "Worker ${WorkerId} - Rate limit hit on $modelName. Sleeping 30s..." -ForegroundColor Yellow
-                Start-Sleep -Seconds 30
+                # Rate limit hit (e.g. RPM limit). Sleep 20s and retry.
+                Write-Host "Worker ${WorkerId} - Rate limit hit on $modelName. Sleeping 20s..." -ForegroundColor Yellow
+                Start-Sleep -Seconds 20
                 $retries--
             }
             else {
-                # Other error (e.g. timeout or 503). Sleep 10s and retry.
-                Write-Host "Worker ${WorkerId} - Error on $modelName. Sleeping 10s..." -ForegroundColor Yellow
-                Start-Sleep -Seconds 10
+                # Other error (e.g. timeout or 503). Sleep 5s and retry.
+                Write-Host "Worker ${WorkerId} - Error on $modelName. Sleeping 5s..." -ForegroundColor Yellow
+                Start-Sleep -Seconds 5
                 $retries--
             }
         }

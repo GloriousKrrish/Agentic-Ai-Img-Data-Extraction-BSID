@@ -2,8 +2,8 @@ import base64
 import json
 import requests
 import backend.config as config
-
 import time
+from backend.services.data_sanitizer import sanitize_extracted_dict
 
 def extract_universal_document(
     file_bytes: bytes, 
@@ -100,7 +100,11 @@ Extraction Guidelines:
                     confidence = round((filled_count / float(total_fields)) * 100, 1) if total_fields > 0 else 90.0
                     
                     schema = [{"key": f.get("key"), "label": f.get("label", f.get("key"))} for f in fields if f.get("key")]
-                    row_fields = {col["key"]: str(parsed_extracted.get(col["key"]) or "").strip() for col in schema}
+                    row_fields = {col["key"]: parsed_extracted.get(col["key"]) for col in schema}
+                    
+                    # Apply Business Analyst Quality Sanitization & Normalization
+                    sanitized_row_fields = sanitize_extracted_dict(row_fields, min_confidence=70.0, record_confidence=confidence)
+                    sanitized_extracted = sanitize_extracted_dict(parsed_extracted, min_confidence=70.0, record_confidence=confidence)
                     
                     return {
                         "modelUsed": model_name,
@@ -111,12 +115,12 @@ Extraction Guidelines:
                         "rows": [
                             {
                                 "rowIndex": 1,
-                                "fields": row_fields,
+                                "fields": sanitized_row_fields,
                                 "status": "COMPLETED",
                                 "confidence": max(confidence, 75.0)
                             }
                         ],
-                        "extractedFields": parsed_extracted,
+                        "extractedFields": sanitized_extracted,
                         "confidence": max(confidence, 75.0),
                         "status": "SUCCESS"
                     }
@@ -132,12 +136,12 @@ Extraction Guidelines:
                     if attempt == 0:
                         time.sleep(3.0)
                     break  # Don't retry same model on quota errors, move to next
-                elif res.status_code == 400:
+                elif res.status_code in [400, 404]:
                     try:
                         err_body = res.json()
-                        last_error = f"Model {model_name}: BAD_REQUEST (400) - {err_body.get('error', {}).get('message', res.text)[:200]}"
+                        last_error = f"Model {model_name}: HTTP {res.status_code} - {err_body.get('error', {}).get('message', res.text)[:200]}"
                     except Exception:
-                        last_error = f"Model {model_name}: BAD_REQUEST (400) - {res.text[:200]}"
+                        last_error = f"Model {model_name}: HTTP {res.status_code} - {res.text[:200]}"
                     break
                 else:
                     last_error = f"Model {model_name} HTTP {res.status_code}: {res.text[:200]}"

@@ -16,7 +16,6 @@ dist/
 
 # Engine Queue & Logs
 *.log
-!worker_*.log
 queue/*.lock_*
 results/*.json
 
@@ -29,5 +28,13 @@ uploads/
 Thumbs.db
 .vscode/
 .idea/
-
 .vercel
+
+# Temporary test outputs
+*.tmp
+~$*
+scratch_test_output.xlsx
+output_extracted_cognitive.xlsx
+output_extracted_latest.xlsx
+audit_log.csv
+audit_log.json

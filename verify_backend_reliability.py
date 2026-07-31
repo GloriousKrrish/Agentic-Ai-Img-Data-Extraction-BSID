@@ -26,7 +26,7 @@ def test_job_system():
     res = requests.post(f"{BASE_URL}/api/jobs", files={"file": file_payload})
     elapsed_ms = (time.time() - t0) * 1000
     
-    if res.status_code != 200:
+    if res.status_code not in [200, 201]:
         print(f"[-] Failed to create job: {res.status_code} {res.text}")
         sys.exit(1)
         
