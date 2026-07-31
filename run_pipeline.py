@@ -10,7 +10,7 @@ def main():
     )
     parser.add_argument("--input", default="testing.xlsx", help="Path to input Excel workbook, CSV, or Image/PDF file")
     parser.add_argument("--output", default="output_extracted.xlsx", help="Path to output Excel workbook")
-    parser.add_argument("--workers", type=int, default=3, help="Number of parallel worker threads")
+    parser.add_argument("--workers", type=int, default=10, help="Number of parallel worker threads")
     args = parser.parse_args()
 
     input_path = args.input.strip()
