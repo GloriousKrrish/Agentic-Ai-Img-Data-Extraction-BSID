@@ -8,7 +8,7 @@ from backend.agents.downloader_agent import DownloaderAgent
 from backend.agents.image_quality_agent import ImageQualityAgent
 from backend.agents.image_enhancer_agent import ImageEnhancerAgent
 from backend.agents.ocr_agent import OCRAgent
-from backend.agents.vision_ai_agent import VisionAIAgent
+from backend.agents.multi_pass_extractor import MultiPassEntityExtractor
 from backend.agents.entity_resolver_agent import BusinessEntityResolverAgent
 from backend.agents.validation_agent import ValidationAgent
 from backend.agents.reflection_agent import ReflectionAgent
@@ -23,13 +23,12 @@ class SupervisorAgent:
     Orchestrates the cognitive multi-pass pipeline:
     - Pass 1: Image Quality Assessment & Adaptive Flags
     - Pass 2: Dual Printed & Handwritten OCR Extraction
-    - Pass 3: Layout Analysis & Business Entity Resolution
-    - Pass 4: Format Normalization
-    - Pass 5: Validation & Math Sanity Review
-    - Pass 6: Reflection Review Agent (Human Operator Lens)
-    - Pass 7: Ordered Resilient Excel Output Writer
-    
-    Uses pipelined parallel execution, smart caching, and strict row order preservation.
+    - Pass 3: Multi-Pass Dedicated Business Entity Extractions (7 Focused Entity Passes)
+    - Pass 4: AI Verification Audit Pass
+    - Pass 5: Business Entity Resolution & Format Normalization
+    - Pass 6: Validation & Math Sanity Review
+    - Pass 7: Reflection Review Agent (Human Data Entry Operator Lens)
+    - Pass 8: Ordered Resilient Excel Output Writer
     """
     def __init__(self, max_workers: int = None):
         self.max_workers = max_workers or config.MAX_WORKERS
@@ -38,7 +37,7 @@ class SupervisorAgent:
         self.quality_agent = ImageQualityAgent()
         self.enhancer_agent = ImageEnhancerAgent()
         self.ocr_agent = OCRAgent()
-        self.vision_agent = VisionAIAgent()
+        self.multi_pass_extractor = MultiPassEntityExtractor()
         self.resolver_agent = BusinessEntityResolverAgent()
         self.validation_agent = ValidationAgent()
         self.reflection_agent = ReflectionAgent()
@@ -78,28 +77,21 @@ class SupervisorAgent:
         ocr_res = self.ocr_agent.extract_text(enhanced_bytes, f"doc_{row_idx}", mime_type)
         raw_ocr_text = ocr_res.get("text_content", "")
 
-        # Pass 3: Layout Section Analysis & Business Entity Resolution
+        # Document Type Classification
         doc_category = self.resolver_agent.classify_document(raw_ocr_text)
 
-        # Check AI Response Cache
-        cached_ai = cache_service.get_ai_response(raw_ocr_text[:100], enhanced_bytes)
-        if cached_ai:
-            vision_res = cached_ai
-        else:
-            vision_res = self.vision_agent.extract_with_vision(enhanced_bytes, schema_info, mime_type, text_content=raw_ocr_text)
-            cache_service.set_ai_response(raw_ocr_text[:100], enhanced_bytes, vision_res)
+        # Pass 3 & 4: Multi-Pass Dedicated Business Entity Extractions + AI Verification Pass
+        mp_res = self.multi_pass_extractor.extract_multi_pass(enhanced_bytes, mime_type, text_content=raw_ocr_text)
+        raw_extracted = mp_res.get("fields", {})
 
-        raw_extracted = vision_res.get("extractedFields", {})
-        if not raw_extracted and vision_res.get("rows"):
-            raw_extracted = vision_res["rows"][0].get("fields", {})
-
-        # Pass 4 & 5: Business Entity Resolution & Validation
+        # Pass 5: Business Entity Resolution & Disambiguation
         resolved_fields = self.resolver_agent.resolve_entities(raw_ocr_text, raw_extracted)
         resolved_fields["invoiceImageLink"] = url
 
+        # Pass 6: Validation & Financial Math Check
         val_res = self.validation_agent.validate_record(resolved_fields)
 
-        # Pass 6: Reflection Review Agent (Human Operator Lens)
+        # Pass 7: Reflection Review Agent (Human Operator Lens)
         ref_res = self.reflection_agent.reflect_and_review(val_res.get("fields", resolved_fields), confidence=val_res["confidence"])
         final_fields = ref_res.get("fields", resolved_fields)
         final_confidence = ref_res["confidence"]
@@ -127,7 +119,7 @@ class SupervisorAgent:
 
     def execute_pipeline(self, input_path: str, output_path: str) -> dict:
         print("\n=========================================================================")
-        print(">>> ENTERPRISE COGNITIVE MULTI-PASS AI DATA ENTRY EMPLOYEE PIPELINE")
+        print(">>> DEDICATED MULTI-PASS COGNITIVE AI DATA ENTRY EMPLOYEE PIPELINE")
         print("=========================================================================\n")
 
         input_file = Path(input_path)
@@ -150,11 +142,8 @@ class SupervisorAgent:
             enhanced_bytes = self.enhancer_agent.enhance(file_bytes, f_res["mime_type"])
             ocr_res = self.ocr_agent.extract_text(enhanced_bytes, input_file.name, f_res["mime_type"])
             
-            schema_info = {"documentCategory": "Invoice Document", "fields": PRIORITY_COLUMNS}
-            vision_res = self.vision_agent.extract_with_vision(enhanced_bytes, schema_info, f_res["mime_type"], text_content=ocr_res["text_content"])
-            raw_extracted = vision_res.get("extractedFields", {}) or (vision_res["rows"][0].get("fields", {}) if vision_res.get("rows") else {})
-            
-            resolved_fields = self.resolver_agent.resolve_entities(ocr_res["text_content"], raw_extracted)
+            mp_res = self.multi_pass_extractor.extract_multi_pass(enhanced_bytes, f_res["mime_type"], text_content=ocr_res["text_content"])
+            resolved_fields = self.resolver_agent.resolve_entities(ocr_res["text_content"], mp_res.get("fields", {}))
             val_res = self.validation_agent.validate_record(resolved_fields)
             ref_res = self.reflection_agent.reflect_and_review(val_res["fields"], val_res["confidence"])
             
@@ -168,7 +157,7 @@ class SupervisorAgent:
         excel_writer.init_workbook(PRIORITY_COLUMNS)
 
         # Parallel Pipelined Worker Pool Execution (Row Order Preserved)
-        print(f"[EXECUTING] Launching {self.max_workers} Cognitive Workers with Pipelined Concurrency...")
+        print(f"[EXECUTING] Launching {self.max_workers} Cognitive Multi-Pass Workers...")
         print("-------------------------------------------------------------------------")
 
         total_tasks = len(tasks)
