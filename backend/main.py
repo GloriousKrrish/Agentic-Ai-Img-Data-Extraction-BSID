@@ -364,3 +364,27 @@ async def websocket_endpoint(websocket: WebSocket):
         ws_manager.disconnect(websocket)
     except Exception:
         ws_manager.disconnect(websocket)
+
+
+# =====================================================================
+# PRODUCTION SPA STATIC FILES & GLOBAL DEPLOYMENT ROUTING
+# =====================================================================
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
+
+dist_path = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if dist_path.exists():
+    assets_dir = dist_path / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        if full_path.startswith("api") or full_path.startswith("ws"):
+            raise HTTPException(status_code=404, detail="API route not found")
+        file_target = dist_path / full_path
+        if file_target.exists() and file_target.is_file():
+            return FileResponse(file_target)
+        return FileResponse(dist_path / "index.html")
+

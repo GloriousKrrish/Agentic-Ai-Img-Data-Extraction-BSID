@@ -1,17 +1,11 @@
 services:
   - type: web
-    name: agentic-ai-doc-extraction-backend
+    name: agentic-ai-data-extraction
     env: python
-    region: singapore
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: "pip install -r requirements.txt && cd frontend && npm install && npm run build"
+    startCommand: "gunicorn -w 4 -k uvicorn.workers.UvicornWorker backend.main:app --bind 0.0.0.0:$PORT"
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_PRIMARY_MODEL
         value: gemini-2.5-flash
-      - key: MODELS_PRIORITY
-        value: gemini-2.5-flash,gemini-2.5-flash-lite,gemini-flash-latest

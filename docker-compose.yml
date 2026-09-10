@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  agentic-ai-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentic_ai_data_extraction
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_PRIMARY_MODEL=gemini-2.5-flash
+      - PORT=8000
+    restart: always
