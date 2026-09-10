@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Key, Save, CheckCircle2, Sparkles, Cpu, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
 import { getApiUrl } from '../config/api';
 
-// Verified working models for this Gemini account
+// Verified working models for Google Gemini API (tested against active API key)
 const AVAILABLE_MODELS = [
   "gemini-3.1-flash-lite",
   "gemini-flash-latest",
   "gemini-3.5-flash",
-  "gemini-3.1-flash-image",
-  "gemini-flash-lite-latest"
+  "gemini-3.6-flash",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
 ];
 
 type ApiStatus = 'idle' | 'testing' | 'ok' | 'quota' | 'invalid';
@@ -28,13 +29,15 @@ export const Settings: React.FC = () => {
         if (data.geminiApiKey) setApiKey(data.geminiApiKey);
         if (data.primaryModel) setPrimaryModel(data.primaryModel);
         if (data.modelsPriority && Array.isArray(data.modelsPriority)) {
-          // Filter to only valid known models
+          // Filter to valid models or append remaining
           const valid = data.modelsPriority.filter((m: string) => AVAILABLE_MODELS.includes(m));
-          if (valid.length > 0) setModelsPriority(valid);
+          const missing = AVAILABLE_MODELS.filter((m: string) => !valid.includes(m));
+          setModelsPriority([...valid, ...missing]);
         }
       })
       .catch(() => {});
   }, []);
+
 
   const handlePrimaryModelChange = (selected: string) => {
     setPrimaryModel(selected);

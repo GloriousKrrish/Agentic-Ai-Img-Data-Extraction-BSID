@@ -1,5 +1,5 @@
 import React from 'react';
-import { Radio, RefreshCw, Zap } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 interface HeaderProps {
   wsConnected: boolean;
@@ -8,63 +8,77 @@ interface HeaderProps {
   subtitle?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ wsConnected, onRefresh, title = "Enterprise Document Intelligence Platform", subtitle = "Real-time Agentic Extraction Engine" }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+  wsConnected, 
+  onRefresh, 
+  title = "Agentic AI Data Extraction Platform", 
+  subtitle = "Multimodal Document Intelligence & Dynamic Schema Engine" 
+}) => {
   return (
-    <header className="h-16 bg-white/80 backdrop-blur-md border-b border-[#ECECEC] px-8 flex items-center justify-between sticky top-0 z-20 shadow-2xs">
+    <header style={{
+      height: 64,
+      background: '#FFFFFF',
+      borderBottom: '1px solid #E2E8F0',
+      padding: '0 2rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      position: 'sticky',
+      top: 0,
+      zIndex: 20,
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)'
+    }}>
       <div>
-        <h1 className="text-base font-bold text-[#1B1B1B] tracking-tight flex items-center gap-2">
-          {title}
-          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-[#005BAC10] text-[#005BAC] font-bold rounded-full border border-[#005BAC25]">
-            Enterprise Tier
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h1 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
+            {title}
+          </h1>
+          <span className="badge badge-neutral" style={{ fontSize: 10, fontWeight: 700 }}>
+            ENTERPRISE EDITION
           </span>
-        </h1>
-        <p className="text-xs text-[#6B7280] font-medium">{subtitle}</p>
+        </div>
+        <p style={{ fontSize: 12, color: '#64748B', margin: 0, fontWeight: 500, marginTop: 1 }}>{subtitle}</p>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* WebSocket Status Indicator */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F8FAFC] border border-[#E2E8F0]">
-          <span className="relative flex h-2 w-2">
-            {wsConnected ? (
-              <>
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </>
-            ) : (
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-            )}
-          </span>
-          <span className="text-xs font-semibold text-[#334155] flex items-center gap-1.5">
-            <Radio className="w-3 h-3 text-[#005BAC]" />
-            {wsConnected ? 'Live Socket Sync' : 'Reconnecting...'}
-          </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        {/* Status Indicator */}
+        <div className={wsConnected ? 'badge badge-success' : 'badge badge-warning'} style={{ padding: '5px 12px', gap: 6 }}>
+          <span style={{
+            width: 7, height: 7, borderRadius: 9999,
+            background: wsConnected ? '#10B981' : '#F59E0B',
+          }} />
+          <span>{wsConnected ? 'Live Socket Sync' : 'Live Sync (HTTP)'}</span>
         </div>
 
-        {/* Engine Pipeline Status */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F8FAFC] border border-[#E2E8F0]">
-          <Zap className="w-3.5 h-3.5 text-[#E60012]" />
-          <span className="text-xs font-semibold text-[#334155]">3 Parallel Workers Active</span>
-        </div>
-
-        {/* Action Button */}
+        {/* Refresh Button */}
         {onRefresh && (
           <button 
             onClick={onRefresh} 
-            className="p-2 text-[#64748B] hover:text-[#1E293B] hover:bg-[#F1F5F9] rounded-lg transition-colors border border-[#E2E8F0]"
-            title="Refresh System Data"
+            className="btn-secondary"
+            style={{ padding: '6px 10px', borderRadius: 8 }}
+            title="Refresh Pipeline Data"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw size={14} />
           </button>
         )}
 
-        {/* Enterprise Profile Pill */}
-        <div className="flex items-center gap-2.5 pl-2 border-l border-[#ECECEC]">
-          <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-xs shadow-xs">
-            BS
+        {/* Profile Pill */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          paddingLeft: 14, borderLeft: '1px solid #E2E8F0',
+        }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 8,
+            background: '#4F46E5',
+            color: 'white', fontWeight: 800, fontSize: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 1px 2px rgba(79, 70, 229, 0.2)',
+          }}>
+            AI
           </div>
-          <div className="hidden lg:block">
-            <div className="text-xs font-bold text-[#1E293B]">Bridgestone Admin</div>
-            <div className="text-[10px] text-[#64748B] font-medium">India Operations</div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>Agentic AI Admin</div>
+            <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>System Controller</div>
           </div>
         </div>
       </div>

@@ -36,9 +36,23 @@ def generate_dynamic_schema(file_bytes: bytes, mime_type: str = "image/jpeg", te
     Uses Gemini Multimodal LLM to dynamically inspect any document and generate a bespoke JSON schema.
     Zero hardcoded domain assumptions.
     """
-    api_key = config.GEMINI_API_KEY
+    from backend.services.job_manager import job_manager
+    api_key = job_manager.get_api_key()
     if not api_key:
-        raise ValueError("GEMINI_API_KEY is not set.")
+        print("Schema Generator: GEMINI_API_KEY is not set. Returning fallback schema.")
+        return {
+            "documentCategory": "General Document",
+            "documentTitle": "Extracted Document Data (Missing API Key)",
+            "summary": "Auto-extracted generic schema",
+            "fields": [
+                {"key": "title", "label": "Document Title", "type": "string", "description": "Title or main heading"},
+                {"key": "date", "label": "Date", "type": "string", "description": "Primary date on document"},
+                {"key": "referenceNumber", "label": "Reference ID", "type": "string", "description": "Reference code or ID"},
+                {"key": "primaryEntity", "label": "Primary Name", "type": "string", "description": "Primary entity or subject name"},
+                {"key": "amountOrValue", "label": "Total / Value", "type": "string", "description": "Numerical amount or value"},
+                {"key": "notes", "label": "Notes & Details", "type": "string", "description": "Key notes or details"}
+            ]
+        }
         
     parts = [{"text": SCHEMA_INFERENCE_PROMPT}]
     
@@ -65,12 +79,15 @@ def generate_dynamic_schema(file_bytes: bytes, mime_type: str = "image/jpeg", te
         }
     }
     
+    models_to_try = getattr(config, "MODELS_PRIORITY", []) or [
+        "gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"
+    ]
     last_error = None
-    for model_name in config.MODELS_PRIORITY:
+    for model_name in models_to_try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
-        for attempt in range(2):
+        for attempt in range(3):
             try:
-                res = requests.post(url, json=payload, timeout=30)
+                res = requests.post(url, json=payload, timeout=15)
                 if res.status_code == 200:
                     data = res.json()
                     raw_text = data['candidates'][0]['content']['parts'][0]['text']
@@ -83,10 +100,12 @@ def generate_dynamic_schema(file_bytes: bytes, mime_type: str = "image/jpeg", te
                         last_error = f"Model {model_name}: QUOTA_EXCEEDED (429) - {err_msg[:200]}"
                     except Exception:
                         last_error = f"Model {model_name}: QUOTA_EXCEEDED (429) - Free tier quota exhausted"
-                    if attempt == 0:
-                        time.sleep(3.0)
-                    break  # Move to next model on quota errors
+                    if attempt < 2:
+                        time.sleep(2.0 * (attempt + 1))
+                    else:
+                        break  # Move to next model after 3 attempts
                 elif res.status_code in [400, 404]:
+                    # Model not available — skip immediately
                     try:
                         err_body = res.json()
                         last_error = f"Model {model_name}: HTTP {res.status_code} - {err_body.get('error', {}).get('message', res.text)[:200]}"
@@ -103,7 +122,7 @@ def generate_dynamic_schema(file_bytes: bytes, mime_type: str = "image/jpeg", te
     return {
         "documentCategory": "General Document",
         "documentTitle": "Extracted Document Data",
-        "summary": "Auto-extracted generic schema",
+        "summary": f"Auto-extracted fallback schema ({last_error or 'API limits reached'})",
         "fields": [
             {"key": "title", "label": "Document Title", "type": "string", "description": "Title or main heading"},
             {"key": "date", "label": "Date", "type": "string", "description": "Primary date on document"},
@@ -113,3 +132,4 @@ def generate_dynamic_schema(file_bytes: bytes, mime_type: str = "image/jpeg", te
             {"key": "notes", "label": "Notes & Details", "type": "string", "description": "Key notes or details"}
         ]
     }
+

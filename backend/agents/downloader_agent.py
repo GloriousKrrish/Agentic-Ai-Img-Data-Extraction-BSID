@@ -38,13 +38,13 @@ class DownloaderAgent:
 
         return url
 
-    def fetch(self, raw_url: str, max_retries: int = 3) -> dict:
+    def fetch(self, raw_url: str, max_retries: int = 2) -> dict:
         url = self.transform_url(raw_url)
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         
         for attempt in range(max_retries):
             try:
-                res = requests.get(url, headers=headers, timeout=20, allow_redirects=True)
+                res = requests.get(url, headers=headers, timeout=8, allow_redirects=True)
                 if res.status_code == 200 and len(res.content) > 50:
                     content_type = res.headers.get("Content-Type", "image/jpeg").split(";")[0].strip().lower()
                     mime_type = "application/pdf" if ("pdf" in url.lower() or "pdf" in content_type) else "image/jpeg"
@@ -61,6 +61,6 @@ class DownloaderAgent:
                 err = str(e)
                 
             if attempt < max_retries - 1:
-                time.sleep(1.0 * (attempt + 1))
+                time.sleep(0.5 * (attempt + 1))
                 
         return {"success": False, "error": err, "bytes": b"", "mime_type": "image/jpeg"}

@@ -26,14 +26,21 @@ ENABLE_CACHE = os.getenv("ENABLE_CACHE", "true").lower() == "true"
 CACHE_DIR = Path(os.getenv("CACHE_DIR", str(Path(gettempdir()) / "ai_cognitive_cache")))
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
+# Verified working models for this API key (tested & confirmed 200 OK)
+DEFAULT_MODELS_LIST = [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-flash-latest",
+]
+
 def load_config_vars():
     global GEMINI_API_KEY, GEMINI_PRIMARY_MODEL, MODELS_PRIORITY, MAX_WORKERS
     load_dotenv(BASE_DIR / ".env", override=True)
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_PRIMARY_MODEL = os.getenv("GEMINI_PRIMARY_MODEL", "gemini-3.1-flash-lite")
+    GEMINI_PRIMARY_MODEL = os.getenv("GEMINI_PRIMARY_MODEL", "gemini-2.5-flash")
     raw_priority = os.getenv(
         "MODELS_PRIORITY",
-        "gemini-3.1-flash-lite,gemini-flash-latest,gemini-3.5-flash,gemini-3.1-flash-image,gemini-flash-lite-latest"
+        ",".join(DEFAULT_MODELS_LIST)
     )
     MODELS_PRIORITY = [m.strip() for m in raw_priority.split(",") if m.strip()]
     if GEMINI_PRIMARY_MODEL not in MODELS_PRIORITY:

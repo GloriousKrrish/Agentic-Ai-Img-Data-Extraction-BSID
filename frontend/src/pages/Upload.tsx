@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, Sparkles, FileText, CheckCircle2, Loader2, Image, FileSpreadsheet, FileCode, Archive, AlertCircle, ExternalLink } from 'lucide-react';
+import { UploadCloud, Sparkles, FileText, CheckCircle2, Loader2, Image, FileSpreadsheet, FileCode, Archive, AlertCircle, ArrowRight, Bot } from 'lucide-react';
 import { getApiUrl } from '../config/api';
 
 interface UploadProps {
@@ -15,7 +15,6 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onJobCreated }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [createdJobId, setCreatedJobId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isImage = (file: File) => file.type.startsWith('image/');
@@ -24,7 +23,6 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onJobCreated }) => {
     setSelectedFile(file);
     setUploadState('idle');
     setStatusMessage(null);
-    setCreatedJobId(null);
     if (isImage(file)) {
       setPreviewUrl(URL.createObjectURL(file));
     } else {
@@ -56,252 +54,240 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onJobCreated }) => {
     setUploadState('uploading');
     setStatusMessage(`Uploading ${selectedFile.name}...`);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
-
-      const res = await fetch(getApiUrl('/api/jobs'), {
-        method: 'POST',
-        body: formData,
-      });
+      const res = await fetch(getApiUrl('/api/jobs'), { method: 'POST', body: formData, signal: controller.signal });
+      clearTimeout(timeoutId);
 
       if (res.ok) {
         const data = await res.json();
-        const jobId = data.jobId;
-        setCreatedJobId(jobId);
+        const jobId = data.jobId || data.job_id || 'JOB-ACTIVE';
         localStorage.setItem('current_active_job_id', jobId);
         if (onJobCreated) onJobCreated(jobId);
         setUploadState('queued');
-        setStatusMessage(`Job ${jobId} created! AI is extracting data in the background.`);
+        setStatusMessage(`Job ${jobId} created successfully! Extraction in progress.`);
       } else {
         const errJson = await res.json().catch(() => ({}));
         const errMsg = errJson.detail || 'Upload failed';
-        // Check for quota error hint
         if (errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('429')) {
-          setStatusMessage(`API Quota Exceeded. Go to Settings → paste a new Gemini API key.`);
+          setStatusMessage(`API Quota Exceeded. Go to Settings to update your API key.`);
         } else {
           setStatusMessage(`Error: ${errMsg}`);
         }
         setUploadState('error');
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      clearTimeout(timeoutId);
       setUploadState('error');
-      setStatusMessage(`Network error: ${msg}`);
+      if (e instanceof Error && e.name === 'AbortError') {
+        setStatusMessage('Upload timed out. Please try again.');
+      } else {
+        setStatusMessage(`Network error: ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
   };
 
-  const formatBytes = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
+  const formatBytes = (b: number) => b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1048576).toFixed(1)} MB`;
 
   const getFileIcon = (file: File) => {
-    if (file.type.startsWith('image/')) return <Image className="w-4 h-4 text-purple-500" />;
-    if (file.type.includes('pdf')) return <FileText className="w-4 h-4 text-red-500" />;
+    if (file.type.startsWith('image/')) return <Image size={20} color="#4F46E5" />;
+    if (file.type.includes('pdf')) return <FileText size={20} color="#DC2626" />;
     if (file.type.includes('spreadsheet') || file.type.includes('excel') || file.name.endsWith('.xlsx') || file.name.endsWith('.csv'))
-      return <FileSpreadsheet className="w-4 h-4 text-emerald-600" />;
+      return <FileSpreadsheet size={20} color="#059669" />;
     if (file.name.endsWith('.json') || file.name.endsWith('.xml') || file.name.endsWith('.docx'))
-      return <FileCode className="w-4 h-4 text-blue-500" />;
-    if (file.name.endsWith('.zip')) return <Archive className="w-4 h-4 text-amber-600" />;
-    return <FileText className="w-4 h-4 text-slate-500" />;
+      return <FileCode size={20} color="#2563EB" />;
+    if (file.name.endsWith('.zip')) return <Archive size={20} color="#D97706" />;
+    return <FileText size={20} color="#64748B" />;
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-4xl mx-auto">
+    <div style={{ padding: '2.5rem 2rem', maxWidth: 840, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#E6001210] text-[#E60012] rounded-full text-xs font-bold border border-[#E6001220]">
-          <Sparkles className="w-3.5 h-3.5" />
-          Universal AI Document Intelligence — Image, PDF, Excel, Word &amp; More
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+        <div className="badge badge-indigo">
+          <Bot size={14} style={{ marginRight: 4 }} />
+          Multimodal AI Intelligence Engine
         </div>
-        <h1 className="text-3xl font-black text-[#1E293B] tracking-tight">Upload Any Document</h1>
-        <p className="text-xs text-slate-500 max-w-xl mx-auto">
-          Drop an image, PDF, scanned document, or any file. Gemini Vision will automatically detect what it is and extract every field — no templates, no configuration.
+        <h1 style={{ fontSize: 30, fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.025em' }}>
+          Upload Any Document
+        </h1>
+        <p style={{ fontSize: 14, color: '#64748B', margin: 0, maxWidth: 540, lineHeight: 1.5 }}>
+          Drop invoices, receipts, medical bills, PDFs, images, Excel sheets or ZIP archives for automatic multimodal field extraction.
         </p>
       </div>
 
-      <div className="glass-card rounded-3xl p-8 space-y-6 shadow-xl border border-slate-200">
-        {/* Dropzone */}
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer space-y-4 transition-all ${
-            isDragging
-              ? 'border-[#E60012] bg-[#E6001208] scale-[1.01]'
-              : 'border-slate-300 hover:border-[#E60012] bg-slate-50/50 hover:bg-[#E6001204]'
-          }`}
-        >
+      {/* Main Upload Card */}
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div style={{ padding: '2rem' }}>
           <input
             ref={fileInputRef}
             type="file"
-            id="universal-file-upload"
-            onChange={handleInputChange}
             className="hidden"
-            accept="image/*,.pdf,.docx,.xlsx,.xls,.csv,.json,.xml,.txt,.zip"
+            onChange={handleInputChange}
+            accept="image/*,.pdf,.xlsx,.csv,.docx,.json,.xml,.zip"
+            style={{ display: 'none' }}
           />
 
-          {/* Image Preview */}
-          {previewUrl && selectedFile && isImage(selectedFile) ? (
-            <div className="space-y-3">
-              <div className="relative inline-block">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="max-h-48 max-w-full mx-auto rounded-xl shadow-md object-contain border border-slate-200"
-                />
-                <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                  IMAGE
-                </span>
+          <div
+            className={`drop-zone ${isDragging ? 'dragging' : ''}`}
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            style={{
+              padding: '3rem 2rem',
+              textAlign: 'center',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 16,
+              minHeight: 240,
+              justifyContent: 'center',
+            }}
+          >
+            {previewUrl ? (
+              <div style={{ position: 'relative', maxWidth: 200, maxHeight: 150, borderRadius: 8, overflow: 'hidden', border: '1px solid #CBD5E1' }}>
+                <img src={previewUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-              <p className="text-xs text-slate-500">Click or drag to change file</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="w-16 h-16 rounded-2xl bg-[#E600120F] text-[#E60012] flex items-center justify-center mx-auto shadow-sm">
-                <UploadCloud className="w-8 h-8" />
-              </div>
-              <div>
-                <p className="text-base font-extrabold text-[#1E293B]">
-                  {isDragging ? 'Drop it here!' : 'Drag & Drop Any File or Click to Browse'}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  Images (JPG, PNG, WEBP) · PDF · DOCX · XLSX · CSV · JSON · XML · ZIP · up to 50MB
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Selected File Info (non-image) */}
-          {selectedFile && !isImage(selectedFile) && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-xs font-bold text-slate-800 border border-slate-200 shadow-sm">
-              {getFileIcon(selectedFile)}
-              {selectedFile.name} ({formatBytes(selectedFile.size)})
-            </div>
-          )}
-
-          {/* Image file info below preview */}
-          {selectedFile && isImage(selectedFile) && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-xs font-bold text-slate-800 border border-slate-200 shadow-sm">
-              {getFileIcon(selectedFile)}
-              {selectedFile.name} — {formatBytes(selectedFile.size)}
-            </div>
-          )}
-        </div>
-
-        {/* Format Badges */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs font-semibold text-slate-600">
-          <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 flex items-center gap-2">
-            <Image className="w-4 h-4 text-purple-500" />
-            JPG · PNG · WEBP
-          </div>
-          <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-red-500" />
-            PDF · Scanned Docs
-          </div>
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2">
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            Excel · CSV
-          </div>
-          <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-center gap-2">
-            <FileCode className="w-4 h-4 text-blue-500" />
-            DOCX · JSON · XML
-          </div>
-        </div>
-
-        {/* Action Button */}
-        <button
-          onClick={handleExtract}
-          disabled={!selectedFile || uploadState === 'uploading' || uploadState === 'queued'}
-          className="w-full py-4 bg-[#E60012] hover:bg-[#C2000F] text-white font-extrabold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {uploadState === 'uploading' ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Uploading &amp; Creating Job...
-            </>
-          ) : uploadState === 'queued' ? (
-            <>
-              <CheckCircle2 className="w-4 h-4" />
-              Job Queued — Processing in Background
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              Extract with AI — Auto-Detect &amp; Analyse
-            </>
-          )}
-        </button>
-
-        {/* Status Message */}
-        {statusMessage && (
-          <div className={`p-4 rounded-xl text-xs font-bold flex items-start gap-3 border ${
-            uploadState === 'error'
-              ? 'bg-red-50 text-red-800 border-red-200'
-              : uploadState === 'queued'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : 'bg-blue-50 text-blue-800 border-blue-200'
-          }`}>
-            {uploadState === 'error' ? (
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             ) : (
-              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              <div style={{
+                width: 56, 
+                height: 56, 
+                borderRadius: 12,
+                background: '#EEF2FF',
+                border: '1px solid #C7D2FE',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+              }}>
+                <UploadCloud size={28} color="#4F46E5" />
+              </div>
             )}
-            <div className="flex-1">
-              {statusMessage}
-              {uploadState === 'error' && statusMessage.includes('Quota') && (
-                <div className="mt-2">
-                  <a
-                    href="https://aistudio.google.com/apikey"
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 underline text-[#005BAC] font-bold"
-                  >
-                    Get a new API key at aistudio.google.com
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+
+            {selectedFile ? (
+              <div>
+                <div style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: 10, 
+                  padding: '8px 16px', 
+                  background: '#FFFFFF', 
+                  borderRadius: 8, 
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}>
+                  {getFileIcon(selectedFile)}
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{selectedFile.name}</span>
+                  <span style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>({formatBytes(selectedFile.size)})</span>
                 </div>
+                <p style={{ fontSize: 12, color: '#64748B', margin: '8px 0 0', fontWeight: 500 }}>
+                  Click or drag another file to replace
+                </p>
+              </div>
+            ) : (
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  Drag &amp; drop files here, or <span style={{ color: '#4F46E5', cursor: 'pointer' }}>browse</span>
+                </h3>
+                <p style={{ fontSize: 12, color: '#64748B', margin: '6px 0 0', fontWeight: 500 }}>
+                  Supports PNG, JPG, PDF, XLSX, CSV, DOCX, JSON, ZIP up to 50MB
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Action Bar */}
+          <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            <button
+              onClick={handleExtract}
+              disabled={!selectedFile || uploadState === 'uploading'}
+              className="btn-primary"
+              style={{
+                opacity: !selectedFile || uploadState === 'uploading' ? 0.5 : 1,
+                cursor: !selectedFile || uploadState === 'uploading' ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {uploadState === 'uploading' ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Uploading &amp; Processing...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={16} />
+                  <span>Start Agentic AI Extraction</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Status Alert Banner */}
+          {statusMessage && (
+            <div style={{
+              marginTop: '1.25rem',
+              padding: '1rem 1.25rem',
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              background: uploadState === 'queued' ? '#ECFDF5' : uploadState === 'error' ? '#FEF2F2' : '#EEF2FF',
+              border: `1px solid ${uploadState === 'queued' ? '#A7F3D0' : uploadState === 'error' ? '#FECACA' : '#C7D2FE'}`,
+              color: uploadState === 'queued' ? '#047857' : uploadState === 'error' ? '#B91C1C' : '#4338CA',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {uploadState === 'queued' && <CheckCircle2 size={18} color="#047857" />}
+                {uploadState === 'error' && <AlertCircle size={18} color="#B91C1C" />}
+                {uploadState === 'uploading' && <Loader2 size={18} className="animate-spin" color="#4338CA" />}
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{statusMessage}</span>
+              </div>
+
+              {uploadState === 'queued' && (
+                <button
+                  onClick={() => onNavigate('results')}
+                  style={{
+                    background: '#FFFFFF',
+                    border: '1px solid #A7F3D0',
+                    color: '#047857',
+                    padding: '6px 12px',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <span>View Results</span> <ArrowRight size={12} />
+                </button>
               )}
             </div>
+          )}
+        </div>
+
+        {/* Card Footer Bar */}
+        <div style={{
+          background: '#F8FAFC',
+          borderTop: '1px solid #E2E8F0',
+          padding: '0.85rem 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: 12,
+          color: '#64748B',
+          fontWeight: 500,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Sparkles size={14} color="#4F46E5" />
+            <span>OpenCV Auto-Deskew &amp; CLAHE Image Preprocessing Active</span>
           </div>
-        )}
-
-        {/* View Results Button */}
-        {uploadState === 'queued' && createdJobId && (
-          <button
-            onClick={() => onNavigate('results')}
-            className="w-full py-3 bg-[#005BAC] hover:bg-[#004787] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <ExternalLink className="w-4 h-4" />
-            View Live Results for Job {createdJobId}
-          </button>
-        )}
-      </div>
-
-      {/* How It Works */}
-      <div className="glass-card rounded-2xl p-6">
-        <h3 className="font-extrabold text-[#1E293B] text-sm mb-4">How It Works</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-slate-600">
-          {[
-            { step: '1', title: 'Upload Anything', desc: 'Drop any image, PDF, or document' },
-            { step: '2', title: 'AI Classifies', desc: 'Gemini Vision reads and understands the document type' },
-            { step: '3', title: 'Schema Generated', desc: 'Dynamic fields inferred — no templates needed' },
-            { step: '4', title: 'Data Extracted', desc: 'Every field extracted and shown in the Results tab' },
-          ].map(item => (
-            <div key={item.step} className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-full bg-[#E60012] text-white text-xs font-black flex items-center justify-center shrink-0">
-                {item.step}
-              </div>
-              <div>
-                <p className="font-bold text-slate-800">{item.title}</p>
-                <p className="text-slate-500 mt-0.5">{item.desc}</p>
-              </div>
-            </div>
-          ))}
+          <span>API Model: Gemini 2.5 Flash</span>
         </div>
       </div>
     </div>

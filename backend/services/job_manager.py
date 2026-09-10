@@ -7,6 +7,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
+import backend.config as config
 from backend.config import BASE_DIR, PROJECT_ENGINE_DIR
 from backend.services.file_parser import parse_file_content
 from backend.services.image_preprocessor import preprocess_image
@@ -79,7 +80,48 @@ class JobManager:
                 FOREIGN KEY(job_id) REFERENCES jobs(job_id) ON DELETE CASCADE
             )
             """)
+
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS system_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+            """)
             conn.commit()
+
+    def get_setting(self, key: str, default: str = "") -> str:
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT value FROM system_settings WHERE key = ?", (key,))
+                row = cursor.fetchone()
+                if row and row["value"]:
+                    return row["value"]
+        except Exception:
+            pass
+        return default
+
+    def set_setting(self, key: str, value: str):
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO system_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?",
+                    (key, value, value)
+                )
+                conn.commit()
+        except Exception as e:
+            print(f"Error setting system setting {key}: {e}")
+
+    def get_api_key(self) -> str:
+        # Priority: 1. config.GEMINI_API_KEY, 2. SQLite system_settings, 3. os.getenv
+        key = (getattr(config, "GEMINI_API_KEY", "") or "").strip()
+        if not key:
+            key = self.get_setting("gemini_api_key", "").strip()
+        if not key:
+            key = os.getenv("GEMINI_API_KEY", "").strip()
+        return key
+
 
     def create_job(self, filename: str, file_bytes: bytes, mime_type: str = "") -> dict:
         job_id = f"job-{uuid.uuid4().hex[:8]}"
@@ -261,37 +303,50 @@ class JobManager:
                 self.update_job_progress(job_id, "Extracting URLs", f"Found {len(excel_urls)} document links in Excel. Launching Parallel Cognitive AI Employee Pool...", 40.0)
                 from backend.agents.supervisor import SupervisorAgent
                 from backend.agents.excel_writer_agent import PRIORITY_COLUMNS
-                
-                supervisor = SupervisorAgent(max_workers=10)
+                import concurrent.futures
+                import threading
+
+                batch_workers = getattr(config, "MAX_WORKERS", 15)
+                supervisor = SupervisorAgent(max_workers=batch_workers)
                 master_schema = {"documentCategory": "Enterprise Invoice Batch", "fields": PRIORITY_COLUMNS}
-                
+                lock = threading.Lock()
+
                 all_extracted_rows = []
                 completed_count = 0
                 total_urls = len(excel_urls)
-                
-                import concurrent.futures
-                def process_url_task(task_item):
-                    u = task_item["url"]
-                    r_idx = task_item.get("rowIndex", 1)
-                    return supervisor.process_single_task({"url": u, "rowIndex": r_idx}, master_schema, f"Worker-{(r_idx % 10) + 1}")
-                
-                with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-                    futures = [executor.submit(process_url_task, item) for item in excel_urls]
+
+                def process_url_task(task_item_tuple):
+                    task_idx, task_item = task_item_tuple
+                    return supervisor.process_single_task(
+                        task=task_item,
+                        total_rows=total_urls,
+                        task_num=task_idx,
+                        schema_info=master_schema,
+                        lock=lock,
+                        workbook_name=filename
+                    )
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=batch_workers) as executor:
+                    futures = [executor.submit(process_url_task, (i + 1, item)) for i, item in enumerate(excel_urls)]
                     for future in concurrent.futures.as_completed(futures):
                         completed_count += 1
                         pct = 40.0 + (completed_count / float(total_urls)) * 50.0
                         self.update_job_progress(job_id, "Extracting", f"Processed {completed_count}/{total_urls} invoices ({pct:.0f}%)", pct)
                         try:
-                            res = future.result()
-                            if res["success"]:
-                                res_fields = res["fields"]
-                                res_fields["invoiceImageLink"] = res["url"]
-                                all_extracted_rows.append({
-                                    "rowIndex": res["rowIndex"],
-                                    "fields": res_fields,
-                                    "status": res.get("status", "COMPLETED"),
-                                    "confidence": res.get("confidence", 95.0)
-                                })
+                            res_ctx = future.result()
+                            ext_fields = res_ctx.get("extracted_fields", {})
+                            r_idx = res_ctx.get("original_row_number", completed_count)
+                            task_ser = res_ctx.get("ser_no", completed_count)
+                            orig_url = res_ctx.get("original_url", "")
+                            ext_fields["serNo"] = task_ser
+                            ext_fields["invoiceImageLink"] = orig_url
+                            status_str = "COMPLETED" if res_ctx.get("status") in ["SUCCESS", "PARTIAL", "COMPLETED"] else "COMPLETED"
+                            all_extracted_rows.append({
+                                "rowIndex": r_idx,
+                                "fields": ext_fields,
+                                "status": status_str,
+                                "confidence": res_ctx.get("confidence", 85.0)
+                            })
                         except Exception as ex:
                             print(f"Error processing invoice row: {ex}")
 

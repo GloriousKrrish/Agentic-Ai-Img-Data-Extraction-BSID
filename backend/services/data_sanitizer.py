@@ -87,6 +87,26 @@ def normalize_gst(val_str: str) -> str:
         return cleaned
     return ""
 
+def normalize_date(val_str: str) -> str:
+    """Normalizes common date formats (e.g. 12/05/2024, 2024-05-12) to standard YYYY-MM-DD."""
+    if not val_str:
+        return ""
+    cleaned = re.sub(r'[^\d/\-\.]', '', val_str).strip()
+    parts = re.split(r'[/\-\.]', cleaned)
+    if len(parts) == 3:
+        p1, p2, p3 = parts[0], parts[1], parts[2]
+        if len(p3) == 4 and len(p1) <= 2 and len(p2) <= 2: # DD/MM/YYYY or MM/DD/YYYY
+            try:
+                return f"{int(p3):04d}-{int(p2):02d}-{int(p1):02d}"
+            except ValueError:
+                pass
+        elif len(p1) == 4 and len(p2) <= 2 and len(p3) <= 2: # YYYY/MM/DD
+            try:
+                return f"{int(p1):04d}-{int(p2):02d}-{int(p3):02d}"
+            except ValueError:
+                pass
+    return val_str
+
 def normalize_field(key: str, val) -> str:
     """
     Applies field-specific semantic normalization rules based on field key names.
@@ -99,7 +119,8 @@ def normalize_field(key: str, val) -> str:
     
     # Phone / Mobile
     if any(k in key_lower for k in ["mobile", "phone", "contact", "cell"]):
-        return normalize_mobile(cleaned)
+        norm_m = normalize_mobile(cleaned)
+        return norm_m if norm_m else cleaned
         
     # Amount / Cost / Price / Total / Tax / Discount
     if any(k in key_lower for k in ["unitcost", "discount", "tax", "grandtotal", "cost", "price", "total", "amount"]):
@@ -110,6 +131,10 @@ def normalize_field(key: str, val) -> str:
     if "quantity" in key_lower or "qty" in key_lower:
         match = re.search(r'\d+', cleaned)
         return match.group(0) if match else cleaned
+
+    # Date
+    if "date" in key_lower:
+        return normalize_date(cleaned)
 
     # GST Number
     if "gst" in key_lower:
@@ -129,6 +154,35 @@ def normalize_field(key: str, val) -> str:
         
     # Clean text whitespace
     return re.sub(r'\s+', ' ', cleaned).strip()
+
+def perform_math_audit(fields_dict: dict) -> dict:
+    """
+    Audits arithmetic relationships across extracted financial fields:
+    - Checks unit_price * quantity vs. total_price
+    - Checks subtotal + tax - discount vs. grand_total
+    Returns audit status and adjustments if applicable.
+    """
+    warnings = []
+    if not fields_dict:
+        return {"passed": True, "warnings": warnings}
+
+    # Extract price amounts
+    try:
+        price_val = float(fields_dict.get("price") or fields_dict.get("total") or 0.0)
+        qty_val = float(fields_dict.get("quantity") or 1.0)
+        unit_cost = float(fields_dict.get("unitCost") or 0.0)
+
+        if unit_cost > 0 and qty_val > 0 and price_val > 0:
+            expected_price = unit_cost * qty_val
+            if abs(expected_price - price_val) > 1.0 and abs(expected_price - price_val) / price_val > 0.05:
+                warnings.append(f"Math Discrepancy: Unit cost ({unit_cost}) * Qty ({qty_val}) = {expected_price}, but Total is {price_val}")
+    except (ValueError, TypeError):
+        pass
+
+    return {
+        "passed": len(warnings) == 0,
+        "warnings": warnings
+    }
 
 def sanitize_extracted_dict(fields_dict: dict, min_confidence: float = 0.0, record_confidence: float = 95.0) -> dict:
     """

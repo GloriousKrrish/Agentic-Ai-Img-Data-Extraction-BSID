@@ -125,13 +125,16 @@ export const App: React.FC = () => {
     };
   }, [currentJobId]);
 
+  // Persistent jobs count for Sidebar badge
+  const totalJobsBadge = allJobs.length > 0 ? allJobs.length : dataset.rows.length;
+
   return (
-    <div className="min-h-screen bg-[#FCFCFC] flex text-slate-900 font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex text-[#0F172A] font-sans">
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         pendingCount={kpis.pendingDocuments}
-        jobsCount={dataset.rows.length}
+        jobsCount={totalJobsBadge}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -139,7 +142,7 @@ export const App: React.FC = () => {
           wsConnected={wsConnected}
           onRefresh={fetchJobState}
           title="Universal AI Document Intelligence Platform"
-          subtitle="Dynamic Schema Discovery & Extraction Engine"
+          subtitle="Dynamic Schema Discovery & Multimodal Extraction Engine"
         />
 
         <main className="flex-1 overflow-y-auto pb-12">

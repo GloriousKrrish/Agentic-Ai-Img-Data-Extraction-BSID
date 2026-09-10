@@ -5,28 +5,30 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from backend.services.data_sanitizer import normalize_field
 
-# Enterprise Priority 20 Columns in Exact Specified Order
+# Enterprise Priority Mandatory Columns in Exact Specified Order
 PRIORITY_COLUMNS = [
-    {"key": "invoiceImageLink", "label": "Invoice Image Link"},
+    {"key": "serNo", "label": "Ser No"},
+    {"key": "invoiceImageLink", "label": "Invoice Images"},
     {"key": "customerName", "label": "Customer Name"},
     {"key": "customerMobile", "label": "Customer Mobile Number"},
-    {"key": "vehicleNumber", "label": "Vehicle Registration Number"},
+    {"key": "vehicleNumber", "label": "Vehicle Number"},
+    {"key": "tyreSize", "label": "Size"},
+    {"key": "pattern", "label": "Pattern"},
+    {"key": "dotCode", "label": "DOT"},
+    {"key": "unitCost", "label": "Cost"},
+    {"key": "grandTotal", "label": "Total Cost"},
+    {"key": "dealerName", "label": "Dealer Name"},
     {"key": "invoiceNumber", "label": "Invoice Number"},
     {"key": "invoiceDate", "label": "Invoice Date"},
-    {"key": "dealerName", "label": "Dealer Name"},
     {"key": "dealerGst", "label": "Dealer GST"},
     {"key": "dealerAddress", "label": "Dealer Address"},
-    {"key": "tyreSize", "label": "Tyre Size"},
-    {"key": "pattern", "label": "Tyre Pattern"},
-    {"key": "dotCode", "label": "DOT Code"},
     {"key": "serialNumber", "label": "Serial Number"},
     {"key": "quantity", "label": "Quantity"},
-    {"key": "unitCost", "label": "Unit Cost"},
     {"key": "discount", "label": "Discount"},
     {"key": "tax", "label": "Tax"},
-    {"key": "grandTotal", "label": "Grand Total"},
-    {"key": "confidenceScore", "label": "Confidence Score"},
-    {"key": "processingStatus", "label": "Processing Status"}
+    {"key": "confidenceScore", "label": "Confidence"},
+    {"key": "processingStatus", "label": "Status"},
+    {"key": "remarks", "label": "Remarks"}
 ]
 
 class ExcelWriterAgent:
@@ -129,6 +131,8 @@ class ExcelWriterAgent:
 
         # Build full field map including URL, confidence, status
         full_fields = dict(fields_dict)
+        if not full_fields.get("serNo"):
+            full_fields["serNo"] = row_idx
         if not full_fields.get("invoiceImageLink"):
             full_fields["invoiceImageLink"] = full_fields.get("sourceUrl", "")
         full_fields["confidenceScore"] = f"{confidence:.1f}%"
@@ -143,8 +147,17 @@ class ExcelWriterAgent:
 
             fk_lower = fk.lower()
 
-            # 1. Image Link Hyperlink
-            if fk == "invoiceImageLink" or fk_lower == "sourceurl":
+            # 0. Ser No (Sequential Serial Number: 1, 2, 3...)
+            if fk == "serNo" or fk_lower == "serno":
+                ser_num = full_fields.get("serNo")
+                if ser_num is not None and str(ser_num).isdigit():
+                    cell.value = int(ser_num)
+                else:
+                    cell.value = target_row - 1
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+
+            # 1. Image Link Hyperlink (Copied UNTOUCHED from input workbook)
+            elif fk == "invoiceImageLink" or fk_lower == "sourceurl" or fk_lower == "invoiceimages":
                 url_str = str(raw_v or "").strip()
                 if url_str.startswith("http://") or url_str.startswith("https://"):
                     cell.value = f'=HYPERLINK("{url_str}", "View Image")'
@@ -221,12 +234,41 @@ class ExcelWriterAgent:
         self._save_workbook(wb)
         wb.close()
 
+    def write_row_from_context(self, task_context: dict):
+        """
+        Writes directly from preserved TaskContext object without row reconstruction.
+        Guarantees exact Ser No and Invoice Images copied directly from input workbook.
+        """
+        fields = dict(task_context.get("extracted_fields", {}))
+        fields["serNo"] = task_context.get("ser_no")
+        fields["invoiceImageLink"] = task_context.get("original_url")
+        confidence = task_context.get("confidence", 95.0)
+        status = task_context.get("status", "COMPLETED")
+        row_idx = task_context.get("original_row_number", task_context.get("ser_no", 1))
+
+        self.write_row_incremental(
+            PRIORITY_COLUMNS,
+            row_idx=row_idx,
+            fields_dict=fields,
+            confidence=confidence,
+            status=status
+        )
+
+    def init_failed_workbook(self):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Failed Extractions"
+        ws.append(["Row Index", "Invoice Image Link", "Error Details"])
+        self._save_workbook(wb, self.failed_output_path)
+        wb.close()
+
     def record_failed_row(self, row_index: int, url: str, error_msg: str):
-        self.failed_items.append({
-            "RowIndex": row_index,
-            "URL": url,
-            "Error": error_msg
-        })
+        if row_index > 0:
+            self.failed_items.append({
+                "RowIndex": row_index,
+                "URL": url,
+                "Error": error_msg
+            })
         
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -238,3 +280,4 @@ class ExcelWriterAgent:
             
         self._save_workbook(wb, self.failed_output_path)
         wb.close()
+

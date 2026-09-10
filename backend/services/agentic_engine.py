@@ -85,20 +85,15 @@ class DocumentFetcherAgent:
 # =====================================================================
 # AGENT 4: IMAGE PREPROCESSOR
 # =====================================================================
+from backend.services.image_preprocessor import preprocess_image
+
 class ImagePreprocessorAgent:
     def preprocess(self, doc_bytes: bytes, mime_type: str) -> bytes:
         if mime_type == "application/pdf":
             return doc_bytes
         try:
-            img = Image.open(io.BytesIO(doc_bytes))
-            img = ImageOps.exif_transpose(img)
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
-            enhancer = ImageEnhance.Contrast(img)
-            img = enhancer.enhance(1.2)
-            buf = io.BytesIO()
-            img.save(buf, format='JPEG', quality=95)
-            return buf.getvalue()
+            enhanced_bytes, _ = preprocess_image(doc_bytes)
+            return enhanced_bytes
         except Exception:
             return doc_bytes
 
@@ -168,6 +163,8 @@ class SchemaEvolutionAgent:
 # =====================================================================
 # AGENT 10: VALIDATION AGENT
 # =====================================================================
+from backend.services.data_sanitizer import perform_math_audit
+
 class ValidationAgent:
     def validate(self, fields: dict) -> dict:
         confidence = 95.0
@@ -175,7 +172,17 @@ class ValidationAgent:
         if not fields.get("invoiceNumber") and not fields.get("vehicleNumber"):
             warnings.append("Missing primary reference number")
             confidence -= 10.0
-        return {"confidence": max(confidence, 70.0), "warnings": warnings}
+        if not any(fields.get(k) for k in ["price", "grandTotal", "total", "totalAmount", "subTotal", "amount"]):
+            warnings.append("Missing financial total amount")
+            confidence -= 5.0
+
+        math_res = perform_math_audit(fields)
+        if not math_res.get("passed"):
+            warnings.extend(math_res.get("warnings", []))
+            confidence -= 5.0
+
+        return {"confidence": max(confidence, 60.0), "warnings": warnings}
+
 
 # =====================================================================
 # AGENT 11: RESILIENT EXCEL WRITER

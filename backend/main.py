@@ -40,8 +40,8 @@ class BatchStartRequest(BaseModel):
 
 class SettingsUpdateRequest(BaseModel):
     geminiApiKey: str
-    primaryModel: str = "gemini-3.1-flash-lite"
-    modelsPriority: list[str] = ["gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.5-flash"]
+    primaryModel: str = "gemini-2.5-flash"
+    modelsPriority: list[str] = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"]
 
 @app.get("/")
 def read_root():
@@ -57,7 +57,7 @@ def health_check():
     return {
         "status": "ONLINE",
         "version": "3.0.0",
-        "gemini_key_set": bool(config.GEMINI_API_KEY),
+        "gemini_key_set": bool(job_manager.get_api_key()),
         "models_priority": config.MODELS_PRIORITY
     }
 
@@ -65,8 +65,8 @@ def health_check():
 def test_api_key(req: dict):
     """Test a Gemini API key and return its status"""
     import requests as req_lib
-    key = req.get("apiKey", "").strip()
-    model = req.get("model", "gemini-3.1-flash-lite")
+    key = req.get("apiKey", "").strip() or job_manager.get_api_key()
+    model = req.get("model", config.GEMINI_PRIMARY_MODEL or "gemini-3.1-flash-lite")
     if not key:
         return {"status": "INVALID", "message": "No API key provided"}
     try:
@@ -84,6 +84,7 @@ def test_api_key(req: dict):
             return {"status": "INVALID", "message": msg[:300]}
     except Exception as e:
         return {"status": "ERROR", "message": str(e)}
+
 
 def compute_user_kpis():
     all_jobs = job_manager.get_all_jobs(limit=500)
@@ -290,16 +291,18 @@ def get_logs():
 
 @app.get("/api/settings")
 def get_settings():
+    api_key = job_manager.get_api_key()
+    primary = job_manager.get_setting("gemini_primary_model", config.GEMINI_PRIMARY_MODEL)
     return {
-        "geminiApiKey": config.GEMINI_API_KEY,
-        "primaryModel": config.GEMINI_PRIMARY_MODEL,
+        "geminiApiKey": api_key,
+        "primaryModel": primary,
         "modelsPriority": config.MODELS_PRIORITY,
         "engineDir": str(config.PROJECT_ENGINE_DIR)
     }
 
 @app.post("/api/settings")
 def update_settings(req: SettingsUpdateRequest):
-    env_path = config.PROJECT_ENGINE_DIR / ".env"
+    key = req.geminiApiKey.strip()
     priority_list = req.modelsPriority if req.modelsPriority else config.MODELS_PRIORITY
     primary = req.primaryModel.strip() if req.primaryModel else priority_list[0]
     
@@ -308,13 +311,28 @@ def update_settings(req: SettingsUpdateRequest):
     
     priority_str = ",".join(priority_list)
     
-    with open(env_path, "w", encoding="utf-8") as f:
-        f.write(f"GEMINI_API_KEY={req.geminiApiKey.strip()}\n")
-        f.write(f"GEMINI_PRIMARY_MODEL={primary}\n")
-        f.write(f"MODELS_PRIORITY={priority_str}\n")
+    # 1. Update in SQLite database for serverless persistence
+    job_manager.set_setting("gemini_api_key", key)
+    job_manager.set_setting("gemini_primary_model", primary)
+    job_manager.set_setting("models_priority", priority_str)
+    
+    # 2. Update in-memory runtime variables
+    config.GEMINI_API_KEY = key
+    config.GEMINI_PRIMARY_MODEL = primary
+    config.MODELS_PRIORITY = priority_list
+    
+    # 3. Try updating .env file if filesystem is writable
+    try:
+        env_path = config.PROJECT_ENGINE_DIR / ".env"
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.write(f"GEMINI_API_KEY={key}\n")
+            f.write(f"GEMINI_PRIMARY_MODEL={primary}\n")
+            f.write(f"MODELS_PRIORITY={priority_str}\n")
+    except Exception:
+        pass
         
-    config.load_config_vars()
-    return {"status": "SUCCESS", "message": "Settings saved successfully."}
+    return {"status": "SUCCESS", "message": "Settings saved successfully to SQLite and runtime environment."}
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
