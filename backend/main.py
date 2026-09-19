@@ -232,6 +232,68 @@ def get_capabilities_endpoint():
     from backend.agents.capability_registry import capability_registry
     return [c.dict() for c in capability_registry.list_all()]
 
+# =========================================================
+# PHASE 2: TABLE INTELLIGENCE REST APIs
+# =========================================================
+
+@app.get("/api/tables/{job_id}")
+def get_job_tables_endpoint(job_id: str):
+    """Returns extracted Table Intelligence results for a specific job."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    table_res = job.get("tableResult") or job.get("table_result") or {}
+    return {
+        "jobId": job_id,
+        "tableResult": table_res,
+        "lineItems": job.get("extractedFields", {}).get("line_items") or []
+    }
+
+@app.get("/api/tables/{job_id}/{table_id}")
+def get_table_by_id_endpoint(job_id: str, table_id: str):
+    """Returns details for a specific table ID."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    table_res = job.get("tableResult") or job.get("table_result") or {}
+    return {
+        "jobId": job_id,
+        "tableId": table_id,
+        "tableResult": table_res
+    }
+
+class UpdateTableRequest(BaseModel):
+    reconstructed_rows: list[dict]
+
+@app.put("/api/tables/{job_id}/{table_id}")
+def update_table_rows_endpoint(job_id: str, table_id: str, req: UpdateTableRequest):
+    """Human-In-The-Loop endpoint to update cell values in a structured table."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    extracted_fields = job.get("extractedFields", {}) or {}
+    extracted_fields["line_items"] = req.reconstructed_rows
+    updated_job = job_manager.update_job_row(job_id, 1, extracted_fields)
+    return {"status": "SUCCESS", "job": updated_job, "message": f"Table {table_id} updated successfully."}
+
+@app.post("/api/tables/{job_id}/{table_id}/validate")
+def validate_table_endpoint(job_id: str, table_id: str):
+    """Executes on-demand structural and mathematical validation on a table."""
+    from backend.services.table_validation_engine import table_validation_engine
+    from backend.agents.table_models import TableStructure
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    line_items = job.get("extractedFields", {}).get("line_items") or []
+    from backend.services.table_structure_engine import table_structure_engine
+    struct = table_structure_engine.analyze_structure(line_items, page_number=1, table_id=table_id)
+    val_report = table_validation_engine.validate_table(struct, line_items)
+    return val_report.dict()
+
 @app.post("/api/analyze")
 async def analyze_document_endpoint(file: UploadFile = File(...)):
     """Universal Input Analyzer: Inspects input binary structure before extraction."""

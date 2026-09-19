@@ -170,6 +170,49 @@ def generate_dynamic_excel(extracted_items: list[dict]) -> bytes:
             col_letter = get_column_letter(col[0].column)
             ws_items.column_dimensions[col_letter].width = max(max_len + 5, 14)
 
+    # 4. Table Intelligence Summary & Validation Report Sheets
+    has_table_data = any(item.get("tableResult") or item.get("table_result") for item in extracted_items)
+    if has_table_data:
+        ws_tbl = wb.create_sheet(title="Table Summary")
+        tbl_headers = ["Table ID", "Page", "Columns Count", "Rows Count", "Math Valid", "Structural Valid", "Confidence", "Anomalies Count"]
+        ws_tbl.append(tbl_headers)
+
+        header_fill_purple = PatternFill(start_color="334155", end_color="334155", fill_type="solid")
+        for col_num, header in enumerate(tbl_headers, 1):
+            cell = ws_tbl.cell(row=1, column=col_num)
+            cell.fill = header_fill_purple
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        r_counter = 2
+        for item in extracted_items:
+            tbl_res = item.get("tableResult") or item.get("table_result") or {}
+            if not tbl_res:
+                continue
+            t_struct = tbl_res.get("table_structure") or {}
+            val_rep = tbl_res.get("validation_report") or {}
+
+            ws_tbl.cell(row=r_counter, column=1, value=str(tbl_res.get("table_id", "tbl-1")))
+            ws_tbl.cell(row=r_counter, column=2, value=int(tbl_res.get("page_number", 1)))
+            ws_tbl.cell(row=r_counter, column=3, value=len(t_struct.get("columns", [])))
+            ws_tbl.cell(row=r_counter, column=4, value=len(t_struct.get("rows", [])))
+            ws_tbl.cell(row=r_counter, column=5, value="YES" if val_rep.get("numeric_validity") else "NO")
+            ws_tbl.cell(row=r_counter, column=6, value="YES" if val_rep.get("structural_validity") else "NO")
+            ws_tbl.cell(row=r_counter, column=7, value=f"{tbl_res.get('confidence', 0.9)*100:.1f}%")
+            ws_tbl.cell(row=r_counter, column=8, value=len(val_rep.get("anomalies", [])))
+
+            for c_i in range(1, 9):
+                c = ws_tbl.cell(row=r_counter, column=c_i)
+                c.border = thin_border
+                c.font = Font(name="Calibri", size=10)
+                c.alignment = Alignment(horizontal="center", vertical="center")
+            r_counter += 1
+
+        for col in ws_tbl.columns:
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            col_letter = get_column_letter(col[0].column)
+            ws_tbl.column_dimensions[col_letter].width = max(max_len + 5, 14)
+
     buffer = io.BytesIO()
     wb.save(buffer)
     return buffer.getvalue()

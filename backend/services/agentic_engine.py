@@ -129,9 +129,26 @@ class AgenticExecutionEngine:
             aggregated = pdf_aggregator_engine.aggregate_pages(page_results)
             record_step("pdf_aggregator_engine", "Cross-Page Table Continuation & Aggregation", "COMPLETED", t_agg, f"Stitched {len(aggregated.line_items)} line items across {total_pages} pages. Conflicts: {len(aggregated.conflicts)}")
 
+            # Table Intelligence Engine Pass
+            from backend.agents.table_intelligence_agent import table_intelligence_agent
+            t_tbl = time.time()
+            table_exec_res = table_intelligence_agent.process_tables(
+                raw_table_data=aggregated.line_items,
+                text_content=ocr_text,
+                page_number=1,
+                is_scanned=pdf_analysis.is_scanned_pdf
+            )
+            record_step(
+                "table_intelligence_agent",
+                "Advanced Table Intelligence & Structural Analysis",
+                "COMPLETED",
+                t_tbl,
+                f"Columns: {len(table_exec_res.table_structure.columns)}, Rows: {len(table_exec_res.table_structure.rows)}, Math Validity: {table_exec_res.validation_report.numeric_validity}, Anomalies: {len(table_exec_res.validation_report.anomalies)}"
+            )
+
             validated_fields, score_card = validation_engine.validate_and_score(aggregated.document_fields, plan, ocr_text, schema)
             
-            final_status = "COMPLETED" if (score_card.is_trusted and not aggregated.conflicts) else "WAITING_FOR_HUMAN_REVIEW"
+            final_status = "COMPLETED" if (score_card.is_trusted and not aggregated.conflicts and table_exec_res.validation_report.structural_validity) else "WAITING_FOR_HUMAN_REVIEW"
             record_step("job_manager", "Finalize Multi-Page PDF Job State", "COMPLETED", time.time(), f"Final Status: {final_status}, Overall Conf: {score_card.overall_confidence*100:.1f}%")
 
             return {
@@ -139,6 +156,7 @@ class AgenticExecutionEngine:
                 "confidence": round(score_card.overall_confidence * 100.0, 1),
                 "scorecard": score_card.dict(),
                 "pdfAnalysis": pdf_analysis.dict(),
+                "tableResult": table_exec_res.dict(),
                 "analysis": analysis.dict(),
                 "plan": plan.dict(),
                 "schema": schema,

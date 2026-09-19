@@ -51,13 +51,22 @@ class PlannerAgent:
         if analysis.requires_vision or analysis.is_scanned:
             selected_agents.append("vision_extraction_agent")
 
-        if analysis.requires_table_extraction:
-            selected_agents.append("table_extraction_agent")
+        if analysis.requires_table_extraction or analysis.document_domain in ["finance", "medical", "legal"] or analysis.document_type in ["invoice", "financial_statement", "academic_result"]:
+            selected_agents.extend([
+                "table_detector",
+                "table_structure_analyzer",
+                "row_classifier",
+                "table_reconstruction_engine",
+                "table_normalizer",
+                "table_validator",
+                "table_aggregator",
+                "table_anomaly_detector"
+            ])
 
         selected_agents.extend(["validation_agent", "confidence_engine", "dynamic_exporter"])
 
         # 3. Formulate Tools & Processing Strategy
-        tools = ["pdf_parser", "fitz_renderer", "gemini_multimodal", "image_preprocessor", "openpyxl_exporter"]
+        tools = ["pdf_parser", "fitz_renderer", "gemini_multimodal", "table_structure_engine", "table_normalization_engine", "table_validation_engine", "openpyxl_exporter"]
         if analysis.requires_ocr:
             tools.append("tesseract_ocr")
 

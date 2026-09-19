@@ -118,5 +118,96 @@ class CapabilityRegistry:
             output_type="AggregatedDocumentResult"
         ))
 
+        # Phase 2: Table Intelligence Capabilities
+        self.register(AgentCapability(
+            name="table_detector",
+            label="Multi-Signal Table Detector",
+            purpose="Detects table boundaries using text blocks, drawing lines, whitespace alignment, and visual patterns",
+            supported_input_types=["pdf", "image", "png", "jpg"],
+            capabilities=["table_detection", "bounding_box"],
+            output_type="TableRegion"
+        ))
+
+        self.register(AgentCapability(
+            name="table_structure_analyzer",
+            label="Table Structure Analyzer",
+            purpose="Parses table regions into columns, rows, merged cells, and hierarchical headers",
+            supported_input_types=["pdf", "image", "dict", "list"],
+            capabilities=["table_structure", "row_detection", "column_detection"],
+            output_type="TableStructure"
+        ))
+
+        self.register(AgentCapability(
+            name="row_classifier",
+            label="Row Semantic Classifier",
+            purpose="Classifies table row semantics (HEADER, DATA, SUBTOTAL, TOTAL, FOOTER, NOTE, CONTINUATION)",
+            supported_input_types=["list", "dict"],
+            capabilities=["row_classification", "semantic_labeling"],
+            output_type="str"
+        ))
+
+        self.register(AgentCapability(
+            name="column_mapper",
+            label="Header & Column Mapper",
+            purpose="Maps raw headers to standardized semantic column names and infer data types",
+            supported_input_types=["list"],
+            capabilities=["column_mapping", "semantic_types"],
+            output_type="List[TableColumn]"
+        ))
+
+        self.register(AgentCapability(
+            name="cell_extractor",
+            label="Cell Intelligence Extractor",
+            purpose="Extracts cell text, normalized values, data types, and 1:1 source bounding boxes",
+            supported_input_types=["dict", "list"],
+            capabilities=["cell_extraction", "value_normalization"],
+            output_type="TableCell"
+        ))
+
+        self.register(AgentCapability(
+            name="table_reconstruction_engine",
+            label="Table Reconstruction Engine",
+            purpose="Reconstructs clean data tables, handles column shift detection, and aligns missing cells",
+            supported_input_types=["TableStructure"],
+            capabilities=["table_reconstruction", "column_shift_detection"],
+            output_type="List[dict]"
+        ))
+
+        self.register(AgentCapability(
+            name="table_normalizer",
+            label="Table Normalization Engine",
+            purpose="Standardizes headers and cell data without losing raw text or source metadata",
+            supported_input_types=["TableStructure"],
+            capabilities=["table_normalization"],
+            output_type="TableStructure"
+        ))
+
+        self.register(AgentCapability(
+            name="table_validator",
+            label="Table Validation & Math Engine",
+            purpose="Audits row multiplication (qty*price=amount), subtotal sums, and column consistency",
+            supported_input_types=["TableStructure"],
+            capabilities=["table_validation", "table_math_audit"],
+            output_type="TableValidationReport"
+        ))
+
+        self.register(AgentCapability(
+            name="table_aggregator",
+            label="Multi-Page Table Aggregator",
+            purpose="Stitches multi-page continuation tables across page breaks and deduplicates headers",
+            supported_input_types=["list"],
+            capabilities=["multi_page_table_stitching", "table_continuation"],
+            output_type="List[TableStructure]"
+        ))
+
+        self.register(AgentCapability(
+            name="table_anomaly_detector",
+            label="Table Anomaly Detector",
+            purpose="Flags unexpected column counts, missing cells, invalid data types, and broken continuations",
+            supported_input_types=["TableStructure"],
+            capabilities=["table_anomaly_detection"],
+            output_type="List[TableAnomaly]"
+        ))
+
 capability_registry = CapabilityRegistry()
 
