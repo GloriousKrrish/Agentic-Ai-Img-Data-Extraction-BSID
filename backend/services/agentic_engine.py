@@ -189,11 +189,23 @@ class AgenticExecutionEngine:
         raw_fields = extraction_res.get("extractedFields", {}) or {}
         record_step("vision_extraction_agent", "Extract Document Fields (Pass 1)", "COMPLETED", t_ext, f"Extracted {len(raw_fields)} raw fields using {extraction_res.get('modelUsed')}")
 
-        # 5. VALIDATE & SCORE
-        t_val = time.time()
+        # 5. ACCURACY, CONSENSUS, EVIDENCE & SELF-CORRECTION PASS
+        t_acc = time.time()
+        from backend.agents.accuracy_agent import accuracy_agent
+        accuracy_res = accuracy_agent.process_accuracy_pipeline(
+            document_id=plan.plan_id,
+            extracted_fields=raw_fields,
+            raw_text=ocr_text,
+            file_bytes=file_bytes,
+            mime_type=mime_type,
+            schema_info=schema_info
+        )
+        record_step("accuracy_agent", "Accuracy, Consensus & Source Evidence Engine", "COMPLETED", t_acc, f"Evidences Bound: {len(accuracy_res.get('evidences', {}))}, Quality Strategy: {accuracy_res.get('quality', {}).get('recommended_strategy')}")
+
+        validated_fields = accuracy_res.get("validatedFields", raw_fields)
         schema = extraction_res.get("schema", [])
-        validated_fields, score_card = validation_engine.validate_and_score(raw_fields, plan, ocr_text, schema)
-        record_step("validation_engine", "Evaluate Validation & Scorecard", "COMPLETED", t_val, f"Overall Confidence: {score_card.overall_confidence*100:.1f}%, Trusted: {score_card.is_trusted}", conf=score_card.overall_confidence)
+        validated_fields, score_card = validation_engine.validate_and_score(validated_fields, plan, ocr_text, schema)
+        record_step("validation_engine", "Evaluate Validation & Scorecard", "COMPLETED", time.time(), f"Overall Confidence: {score_card.overall_confidence*100:.1f}%, Trusted: {score_card.is_trusted}", conf=score_card.overall_confidence)
 
         # 6. DIAGNOSE & REPLAN (Self-Correction Loop)
         replan_count = 0

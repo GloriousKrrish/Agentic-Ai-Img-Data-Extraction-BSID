@@ -63,10 +63,23 @@ class PlannerAgent:
                 "table_anomaly_detector"
             ])
 
-        selected_agents.extend(["validation_agent", "confidence_engine", "dynamic_exporter"])
+        selected_agents.extend([
+            "accuracy_agent",
+            "evidence_engine",
+            "consensus_engine",
+            "targeted_reextraction_engine",
+            "validation_agent",
+            "confidence_engine",
+            "dynamic_exporter"
+        ])
 
         # 3. Formulate Tools & Processing Strategy
-        tools = ["pdf_parser", "fitz_renderer", "gemini_multimodal", "table_structure_engine", "table_normalization_engine", "table_validation_engine", "openpyxl_exporter"]
+        tools = [
+            "pdf_parser", "fitz_renderer", "gemini_multimodal",
+            "table_structure_engine", "source_evidence_engine",
+            "extraction_consensus_engine", "targeted_reextraction_engine",
+            "openpyxl_exporter"
+        ]
         if analysis.requires_ocr:
             tools.append("tesseract_ocr")
 

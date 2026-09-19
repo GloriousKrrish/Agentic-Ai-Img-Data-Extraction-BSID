@@ -294,6 +294,98 @@ def validate_table_endpoint(job_id: str, table_id: str):
     val_report = table_validation_engine.validate_table(struct, line_items)
     return val_report.dict()
 
+# =========================================================
+# PHASE 3: ACCURACY, CONSENSUS & SOURCE EVIDENCE REST APIs
+# =========================================================
+
+@app.get("/api/jobs/{job_id}/evidence")
+def get_job_evidence_endpoint(job_id: str):
+    """Returns 1:1 source evidence metadata for all fields in a job."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    from backend.services.source_evidence_engine import source_evidence_engine
+    extracted = job.get("extractedFields", {}) or {}
+    evidences = source_evidence_engine.bind_field_evidence(job_id, extracted)
+    return {
+        "jobId": job_id,
+        "evidences": {k: v.dict() for k, v in evidences.items()}
+    }
+
+@app.get("/api/jobs/{job_id}/confidence")
+def get_job_confidence_endpoint(job_id: str):
+    """Returns explainable scorecards and field confidence scores."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    return {
+        "jobId": job_id,
+        "confidence": job.get("confidence", 95.0),
+        "scorecard": job.get("scorecard", {}),
+        "status": job.get("status")
+    }
+
+@app.get("/api/jobs/{job_id}/errors")
+def get_job_errors_endpoint(job_id: str):
+    """Returns error taxonomy report for low-confidence or validation-failed fields."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    from backend.services.field_validation_engine import field_validation_engine
+    extracted = job.get("extractedFields", {}) or {}
+    _, errors = field_validation_engine.validate_fields(extracted)
+    return {
+        "jobId": job_id,
+        "errors": [e.dict() for e in errors]
+    }
+
+@app.get("/api/jobs/{job_id}/fields/{field_name}/evidence")
+def get_field_evidence_endpoint(job_id: str, field_name: str):
+    """Returns 1:1 bounding box and source snippet evidence for a specific field."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    from backend.services.source_evidence_engine import source_evidence_engine
+    extracted = job.get("extractedFields", {}) or {}
+    evidences = source_evidence_engine.bind_field_evidence(job_id, extracted)
+    f_ev = evidences.get(field_name)
+    if not f_ev:
+        raise HTTPException(status_code=404, detail=f"Field {field_name} evidence not found.")
+    return f_ev.dict()
+
+@app.post("/api/jobs/{job_id}/fields/{field_name}/reextract")
+def reextract_field_endpoint(job_id: str, field_name: str):
+    """Executes targeted high-resolution regional re-extraction for a specific field."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    from backend.services.targeted_reextraction_engine import targeted_reextraction_engine
+    extracted = job.get("extractedFields", {}) or {}
+    schema_info = {"documentCategory": job.get("category", "General"), "fields": [{"key": field_name, "label": field_name, "type": "string"}]}
+    
+    reextracted = targeted_reextraction_engine.reextract_fields(
+        file_bytes=job_manager.get_job_file_bytes(job_id) or b"",
+        schema_info=schema_info,
+        mime_type=job.get("mimeType", "application/pdf"),
+        problematic_fields=[field_name]
+    )
+    
+    if field_name in reextracted:
+        extracted[field_name] = reextracted[field_name]
+        job_manager.update_job_row(job_id, 1, extracted)
+
+    return {
+        "status": "SUCCESS",
+        "jobId": job_id,
+        "fieldName": field_name,
+        "reextractedValue": reextracted.get(field_name, extracted.get(field_name))
+    }
+
 @app.post("/api/analyze")
 async def analyze_document_endpoint(file: UploadFile = File(...)):
     """Universal Input Analyzer: Inspects input binary structure before extraction."""

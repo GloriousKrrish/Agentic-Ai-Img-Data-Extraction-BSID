@@ -213,6 +213,48 @@ def generate_dynamic_excel(extracted_items: list[dict]) -> bytes:
             col_letter = get_column_letter(col[0].column)
             ws_tbl.column_dimensions[col_letter].width = max(max_len + 5, 14)
 
+    # 5. Source Evidence Report Sheet
+    has_evidence = any(item.get("evidences") for item in extracted_items)
+    if has_evidence:
+        ws_ev = wb.create_sheet(title="Evidence Report")
+        ev_headers = ["Field Key", "Extracted Value", "Confidence", "Page", "Source Method", "Bounding Box", "Source Text Snippet"]
+        ws_ev.append(ev_headers)
+
+        header_fill_teal = PatternFill(start_color="0D9488", end_color="0D9488", fill_type="solid")
+        for col_num, header in enumerate(ev_headers, 1):
+            cell = ws_ev.cell(row=1, column=col_num)
+            cell.fill = header_fill_teal
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        r_counter = 2
+        for item in extracted_items:
+            ev_dict = item.get("evidences") or {}
+            for f_key, f_ev in ev_dict.items():
+                ev_data = f_ev.get("evidence", {}) if isinstance(f_ev, dict) else {}
+                bbox = ev_data.get("bounding_box") or {}
+                bbox_str = f"[{bbox.get('x1',0)},{bbox.get('y1',0)},{bbox.get('x2',0)},{bbox.get('y2',0)}]" if bbox else "N/A"
+
+                ws_ev.cell(row=r_counter, column=1, value=str(f_key))
+                ws_ev.cell(row=r_counter, column=2, value=str(f_ev.get("selected_value", "") if isinstance(f_ev, dict) else ""))
+                ws_ev.cell(row=r_counter, column=3, value=f"{(f_ev.get('confidence', 0.95) if isinstance(f_ev, dict) else 0.95)*100:.1f}%")
+                ws_ev.cell(row=r_counter, column=4, value=int(ev_data.get("page_number", 1)))
+                ws_ev.cell(row=r_counter, column=5, value=str(ev_data.get("source_type", "OCR+VISION")))
+                ws_ev.cell(row=r_counter, column=6, value=bbox_str)
+                ws_ev.cell(row=r_counter, column=7, value=str(ev_data.get("source_text", "")[:100]))
+
+                for c_i in range(1, 8):
+                    c = ws_ev.cell(row=r_counter, column=c_i)
+                    c.border = thin_border
+                    c.font = Font(name="Calibri", size=10)
+                    c.alignment = Alignment(horizontal="left" if c_i in [1,2,7] else "center", vertical="center")
+                r_counter += 1
+
+        for col in ws_ev.columns:
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            col_letter = get_column_letter(col[0].column)
+            ws_ev.column_dimensions[col_letter].width = max(max_len + 5, 14)
+
     buffer = io.BytesIO()
     wb.save(buffer)
     return buffer.getvalue()
