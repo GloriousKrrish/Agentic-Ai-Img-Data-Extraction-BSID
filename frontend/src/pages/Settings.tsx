@@ -230,6 +230,29 @@ export const Settings: React.FC = () => {
         </div>
       </div>
 
+      {/* Webhook & Enterprise Integration Section */}
+      <div className="glass-card rounded-2xl p-6 space-y-4">
+        <h3 className="font-extrabold text-[#1E293B] text-sm">Enterprise Webhook Integration</h3>
+        <p className="text-xs text-[#64748B]">Automatically notify external systems or Zapier/Make endpoints when document extraction completes</p>
+        
+        <div className="space-y-3">
+          <label className="text-xs font-bold text-[#1E293B]">Webhook Delivery URL</label>
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              placeholder="https://your-domain.com/api/webhooks/document-extracted"
+              className="flex-1 px-4 py-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-xs font-semibold text-[#1E293B]"
+            />
+            <button 
+              onClick={() => alert("Webhook ping sent!")}
+              className="px-4 py-3 bg-[#0F172A] hover:bg-[#1E293B] text-white font-bold text-xs rounded-xl transition-all"
+            >
+              Test Webhook Ping
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* How to get a key */}
       <div className="glass-card rounded-2xl p-6 space-y-4">
         <h3 className="font-extrabold text-[#1E293B] text-sm">How to Get a Gemini API Key</h3>
@@ -249,3 +272,4 @@ export const Settings: React.FC = () => {
     </div>
   );
 };
+

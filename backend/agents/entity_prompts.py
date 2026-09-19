@@ -74,6 +74,74 @@ ENTITY_SCHEMAS = {
     }
 }
 
+DOMAIN_PRESETS = {
+    "Invoice / Bill": {
+        "category": "Invoice",
+        "fields": [
+            {"key": "invoiceNumber", "label": "Invoice Number", "type": "string", "description": "Invoice reference number"},
+            {"key": "invoiceDate", "label": "Invoice Date", "type": "string", "description": "Issue date"},
+            {"key": "customerName", "label": "Customer Name", "type": "string", "description": "Name of customer / buyer"},
+            {"key": "customerMobile", "label": "Customer Mobile", "type": "string", "description": "Customer mobile phone number"},
+            {"key": "dealerName", "label": "Dealer Name", "type": "string", "description": "Dealer or seller company name"},
+            {"key": "dealerGst", "label": "Dealer GSTIN", "type": "string", "description": "Tax ID / GSTIN"},
+            {"key": "grandTotal", "label": "Grand Total", "type": "string", "description": "Final payable amount"}
+        ]
+    },
+    "Medical / Lab Report": {
+        "category": "Medical Report",
+        "fields": [
+            {"key": "patientName", "label": "Patient Name", "type": "string", "description": "Full name of patient"},
+            {"key": "patientAgeGender", "label": "Age / Gender", "type": "string", "description": "Patient age and gender"},
+            {"key": "doctorName", "label": "Doctor / Physician", "type": "string", "description": "Attending doctor name"},
+            {"key": "reportDate", "label": "Report Date", "type": "string", "description": "Lab test / report date"},
+            {"key": "diagnosis", "label": "Diagnosis / Impression", "type": "string", "description": "Medical diagnosis or impression"},
+            {"key": "abnormalResults", "label": "Abnormal Flags", "type": "string", "description": "Any out-of-range lab results"}
+        ]
+    },
+    "KYC / ID Card": {
+        "category": "KYC Document",
+        "fields": [
+            {"key": "fullName", "label": "Full Name", "type": "string", "description": "Full name on ID card"},
+            {"key": "idNumber", "label": "ID Number", "type": "string", "description": "Aadhaar / Passport / SSN / License number"},
+            {"key": "dateOfBirth", "label": "Date of Birth", "type": "string", "description": "DOB (YYYY-MM-DD)"},
+            {"key": "gender", "label": "Gender", "type": "string", "description": "Gender / Sex"},
+            {"key": "address", "label": "Address", "type": "string", "description": "Residential address"},
+            {"key": "expiryDate", "label": "Expiry Date", "type": "string", "description": "ID card expiration date"}
+        ]
+    },
+    "Academic Result / Marksheet": {
+        "category": "Academic Result",
+        "fields": [
+            {"key": "studentName", "label": "Student Name", "type": "string", "description": "Full student name"},
+            {"key": "rollNumber", "label": "Roll / Registration No", "type": "string", "description": "Student roll or reg number"},
+            {"key": "institutionName", "label": "School / University", "type": "string", "description": "Institution name"},
+            {"key": "gpaOrMarks", "label": "Total Marks / GPA", "type": "string", "description": "Final score, GPA, or percentage"},
+            {"key": "resultStatus", "label": "Pass / Fail Status", "type": "string", "description": "Pass, Fail, Distinction status"}
+        ]
+    },
+    "Financial Statement": {
+        "category": "Financial Statement",
+        "fields": [
+            {"key": "companyName", "label": "Company Name", "type": "string", "description": "Entity name"},
+            {"key": "periodEnding", "label": "Fiscal Period", "type": "string", "description": "Quarter / Year ending date"},
+            {"key": "totalRevenue", "label": "Total Revenue", "type": "string", "description": "Net sales or total revenue"},
+            {"key": "netIncome", "label": "Net Income / Profit", "type": "string", "description": "Net profit or income"},
+            {"key": "totalAssets", "label": "Total Assets", "type": "string", "description": "Total balance sheet assets"}
+        ]
+    },
+    "Legal Contract": {
+        "category": "Legal Contract",
+        "fields": [
+            {"key": "contractTitle", "label": "Contract Title", "type": "string", "description": "Agreement title"},
+            {"key": "partyA", "label": "Party A", "type": "string", "description": "First contracting party"},
+            {"key": "partyB", "label": "Party B", "type": "string", "description": "Second contracting party"},
+            {"key": "effectiveDate", "label": "Effective Date", "type": "string", "description": "Start date"},
+            {"key": "contractValue", "label": "Contract Value", "type": "string", "description": "Total monetary value"},
+            {"key": "governingLaw", "label": "Governing Law", "type": "string", "description": "Jurisdiction / Law"}
+        ]
+    }
+}
+
 VERIFICATION_AUDIT_PROMPT = """You are a Senior Business Data Audit Specialist.
 Below is the merged extraction dictionary from an invoice document alongside the original document text:
 
@@ -93,3 +161,4 @@ AUDIT INSTRUCTIONS:
 Return the audited and corrected dictionary. If a field is uncertain or missing, set its value to null.
 Do not invent data.
 """
+

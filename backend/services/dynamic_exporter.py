@@ -113,10 +113,67 @@ def generate_dynamic_excel(extracted_items: list[dict]) -> bytes:
         max_len = max(len(str(cell.value or '')) for cell in col)
         col_letter = get_column_letter(col[0].column)
         ws.column_dimensions[col_letter].width = max(max_len + 5, 14)
-        
+
+    # 3. Check for Nested Line Items and generate secondary sheet if present
+    all_line_items = []
+    for row_idx, item in enumerate(extracted_items, 1):
+        fields = item.get("fields") or item.get("extractedFields") or {}
+        items_arr = fields.get("line_items") or fields.get("lineItems") or item.get("line_items") or []
+        if isinstance(items_arr, list) and items_arr:
+            for sub_item in items_arr:
+                if isinstance(sub_item, dict):
+                    entry = {"documentRow": row_idx}
+                    entry.update(sub_item)
+                    all_line_items.append(entry)
+
+    if all_line_items:
+        ws_items = wb.create_sheet(title="Line Items Detail")
+        li_keys = []
+        for li in all_line_items:
+            for k in li.keys():
+                if k not in li_keys:
+                    li_keys.append(k)
+
+        li_headers = [k.replace('_', ' ').title() for k in li_keys]
+        ws_items.append(li_headers)
+
+        header_fill_blue = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+        for col_num, header in enumerate(li_headers, 1):
+            cell = ws_items.cell(row=1, column=col_num)
+            cell.fill = header_fill_blue
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        for r_i, li in enumerate(all_line_items, 2):
+            r_fill = PatternFill(start_color="F8FAFC" if r_i % 2 == 0 else "FFFFFF", fill_type="solid")
+            for c_i, k in enumerate(li_keys, 1):
+                val = li.get(k)
+                cell = ws_items.cell(row=r_i, column=c_i)
+                if val is None or val == "":
+                    cell.value = None
+                else:
+                    k_lower = k.lower()
+                    if any(nk in k_lower for nk in ["amount", "cost", "price", "total", "quantity", "qty", "rate", "tax"]):
+                        try:
+                            cell.value = float(val) if '.' in str(val) else int(val)
+                        except ValueError:
+                            cell.value = str(val)
+                    else:
+                        cell.value = str(val)
+
+                cell.fill = r_fill
+                cell.border = thin_border
+                cell.font = Font(name="Calibri", size=10)
+
+        for col in ws_items.columns:
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            col_letter = get_column_letter(col[0].column)
+            ws_items.column_dimensions[col_letter].width = max(max_len + 5, 14)
+
     buffer = io.BytesIO()
     wb.save(buffer)
     return buffer.getvalue()
+
 
 def generate_dynamic_csv(extracted_items: list[dict]) -> str:
     """Generates clean CSV text content dynamically."""

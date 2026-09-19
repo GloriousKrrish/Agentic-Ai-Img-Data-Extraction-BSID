@@ -38,12 +38,14 @@ def parse_file_content(file_bytes: bytes, file_name: str, mime_type: str = "") -
     elif ext == '.pdf' or 'pdf' in mime_type:
         extracted_text = ""
         page_count = 0
+        page_chunks = []
         try:
             reader = pypdf.PdfReader(io.BytesIO(file_bytes))
             page_count = len(reader.pages)
             for i, page in enumerate(reader.pages):
                 txt = page.extract_text() or ""
                 if txt.strip():
+                    page_chunks.append({"page": i + 1, "text": txt.strip()})
                     extracted_text += f"\n--- Page {i+1} ---\n" + txt
         except Exception as e:
             extracted_text = f"PDF Read Error: {str(e)}"
@@ -51,6 +53,7 @@ def parse_file_content(file_bytes: bytes, file_name: str, mime_type: str = "") -
         return {
             "file_type": "pdf",
             "page_count": page_count,
+            "page_chunks": page_chunks,
             "text_content": extracted_text.strip(),
             "raw_bytes": file_bytes,
             "has_vision": True # Can also be passed to Gemini Vision

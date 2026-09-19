@@ -14,7 +14,7 @@ from backend.services.ps_runner import get_queue_status, start_parallel_batch, g
 from backend.services.ws_manager import ws_manager
 from backend.services.file_parser import parse_file_content
 from backend.services.image_preprocessor import preprocess_image
-from backend.services.schema_generator import generate_dynamic_schema
+from backend.services.schema_generator import generate_dynamic_schema, get_domain_presets
 from backend.services.universal_extractor import extract_universal_document
 from backend.services.dynamic_exporter import generate_dynamic_excel, generate_dynamic_csv
 from backend.services.job_manager import job_manager
@@ -37,6 +37,13 @@ class BatchStartRequest(BaseModel):
     numWorkers: int = 3
     delaySeconds: int = 8
     fileName: str = "Invoice_data_capture.xlsx"
+
+class UpdateRowRequest(BaseModel):
+    fields: dict
+
+class WebhookTestRequest(BaseModel):
+    webhookUrl: str
+
 
 class SettingsUpdateRequest(BaseModel):
     geminiApiKey: str
@@ -203,6 +210,65 @@ def delete_job_endpoint(job_id: str):
     if not success:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
     return {"status": "SUCCESS", "message": f"Job {job_id} deleted."}
+
+@app.put("/api/jobs/{job_id}/rows/{row_index}")
+def update_job_row_endpoint(job_id: str, row_index: int, req: UpdateRowRequest):
+    """
+    Human-In-The-Loop endpoint to update low-confidence fields for a specific job row.
+    """
+    updated_job = job_manager.update_job_row(job_id, row_index, req.fields)
+    if not updated_job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+    return {"status": "SUCCESS", "job": updated_job, "message": f"Row {row_index} updated successfully."}
+
+@app.get("/api/schemas/presets")
+def get_schema_presets_endpoint():
+    """Returns domain-specific template presets for custom schema generation."""
+    return get_domain_presets()
+
+@app.get("/api/capabilities")
+def get_capabilities_endpoint():
+    """Returns central registry of registered agents, tools, and capabilities."""
+    from backend.agents.capability_registry import capability_registry
+    return [c.dict() for c in capability_registry.list_all()]
+
+@app.post("/api/analyze")
+async def analyze_document_endpoint(file: UploadFile = File(...)):
+    """Universal Input Analyzer: Inspects input binary structure before extraction."""
+    from backend.agents.input_analyzer_agent import input_analyzer_agent
+    content = await file.read()
+    filename = file.filename or "uploaded_document"
+    mime = file.content_type or "application/octet-stream"
+    analysis = input_analyzer_agent.analyze(content, filename, mime)
+    return analysis.dict()
+
+@app.post("/api/plan")
+async def create_plan_endpoint(file: UploadFile = File(...), preset: str = ""):
+    """Agentic Planner: Formulates executable extraction plan."""
+    from backend.agents.input_analyzer_agent import input_analyzer_agent
+    from backend.agents.planner_agent import planner_agent
+    content = await file.read()
+    filename = file.filename or "uploaded_document"
+    mime = file.content_type or "application/octet-stream"
+    analysis = input_analyzer_agent.analyze(content, filename, mime)
+    plan = planner_agent.create_plan(analysis, user_preset=preset)
+    return plan.dict()
+
+@app.post("/api/webhooks/test")
+def test_webhook_endpoint(req: WebhookTestRequest):
+    """Tests webhook endpoint delivery."""
+    import requests as req_lib
+    try:
+        res = req_lib.post(req.webhookUrl, json={
+            "event": "test.ping",
+            "message": "Universal AI Document Intelligence Webhook Test OK",
+            "timestamp": time.time()
+        }, timeout=5)
+        return {"status": "SUCCESS", "statusCode": res.status_code, "message": f"Webhook returned HTTP {res.status_code}"}
+    except Exception as e:
+        return {"status": "ERROR", "message": str(e)}
+
+
 
 @app.get("/api/jobs/{job_id}/download/{export_format}")
 def download_job_result_endpoint(job_id: str, export_format: str = "excel"):

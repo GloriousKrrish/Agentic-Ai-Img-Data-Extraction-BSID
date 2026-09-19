@@ -133,3 +133,10 @@ def generate_dynamic_schema(file_bytes: bytes, mime_type: str = "image/jpeg", te
         ]
     }
 
+
+def get_domain_presets() -> dict:
+    """Returns domain preset templates for UI dropdown selection and custom schema building."""
+    from backend.agents.entity_prompts import DOMAIN_PRESETS
+    return DOMAIN_PRESETS
+
+

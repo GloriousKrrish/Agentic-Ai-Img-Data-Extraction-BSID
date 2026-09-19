@@ -215,6 +215,21 @@ Methodology:
                     else:
                         confidence = min(confidence + 5.0, 100.0)
 
+                    # Hybrid OCR & Vision LLM Consensus Verification
+                    consensus_flags = []
+                    if text_content and len(text_content) > 10:
+                        ocr_upper = text_content.upper()
+                        # Cross check phone number
+                        mobile_val = str(sanitized_extracted.get("customerMobile", "") or "").strip()
+                        if mobile_val and mobile_val not in ocr_upper:
+                            # Search OCR text for 10-digit candidate
+                            import re
+                            candidates = re.findall(r'\b[6-9]\d{9}\b', ocr_upper)
+                            if candidates and candidates[0] != mobile_val:
+                                sanitized_extracted["customerMobile"] = candidates[0]
+                                sanitized_row_fields["customerMobile"] = candidates[0]
+                                consensus_flags.append(f"Customer mobile corrected via OCR consensus: {candidates[0]}")
+
                     success_res = {
                         "modelUsed": model_name,
                         "documentCategory": category,
@@ -233,7 +248,8 @@ Methodology:
                         "confidence": confidence,
                         "status": "SUCCESS",
                         "pyramid_sliced": len(pyramid_crops) > 0 if 'pyramid_crops' in locals() else False,
-                        "math_audit": math_audit
+                        "math_audit": math_audit,
+                        "consensus_flags": consensus_flags
                     }
                     cache_service.set_ai_response(prompt, file_bytes, success_res)
                     return success_res

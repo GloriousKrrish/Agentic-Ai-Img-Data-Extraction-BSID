@@ -268,6 +268,65 @@ class JobManager:
             conn.commit()
             return True
 
+    def update_job_row(self, job_id: str, row_index: int, updated_fields: dict) -> dict:
+        """
+        Updates extracted fields for a specific row in a job (Human-in-the-Loop review).
+        Performs in-place modification of SQLite rows JSON payload.
+        """
+        job = self.get_job(job_id)
+        if not job:
+            return None
+
+        rows = job.get("rows", [])
+        found = False
+        for r in rows:
+            r_idx = r.get("rowIndex") or r.get("row_index") or 1
+            if r_idx == row_index:
+                r["fields"] = updated_fields
+                r["status"] = "HUMAN_VERIFIED"
+                found = True
+                break
+
+        if not found and rows:
+            # Fallback update first row if index missing
+            rows[0]["fields"] = updated_fields
+            rows[0]["status"] = "HUMAN_VERIFIED"
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE jobs SET rows_json = ? WHERE job_id = ?", (json.dumps(rows), job_id))
+            conn.commit()
+
+        self.add_log(job_id, "INFO", f"Human-in-the-loop: Row {row_index} updated and marked HUMAN_VERIFIED.")
+        return self.get_job(job_id)
+
+    def dispatch_webhook(self, job_id: str):
+        """Dispatches job completion payload to configured webhook URL if set."""
+        webhook_url = self.get_setting("webhook_url", "").strip()
+        if not webhook_url:
+            return
+
+        job = self.get_job(job_id)
+        if not job:
+            return
+
+        try:
+            import requests
+            payload = {
+                "event": "job.completed",
+                "jobId": job["job_id"],
+                "status": job["status"],
+                "filename": job["filename"],
+                "category": job.get("document_category"),
+                "rowsCount": len(job.get("rows", [])),
+                "timestamp": datetime.utcnow().isoformat() + "Z"
+            }
+            res = requests.post(webhook_url, json=payload, timeout=5)
+            self.add_log(job_id, "INFO", f"Webhook dispatched to {webhook_url} (HTTP {res.status_code})")
+        except Exception as e:
+            self.add_log(job_id, "ERROR", f"Webhook delivery error: {e}")
+
+
     def _run_job_pipeline(self, job_id: str):
         job = self.get_job(job_id)
         if not job:
@@ -355,26 +414,49 @@ class JobManager:
                 doc_category = "Enterprise Invoice Batch"
                 doc_title = f"Cognitive AI Invoice Batch from {filename}"
             else:
-                # Standard single document processing
-                self.update_job_progress(job_id, "Generating Schema", "Inferring dynamic AI schema with Gemini", 50.0)
-                schema_info = generate_dynamic_schema(
-                    bytes_to_use, 
-                    job.get("file_type", ""), 
-                    text_content=parsed.get("text_content", "")
-                )
+                # Standard single document processing via Agentic Execution Engine (Analyze -> Plan -> Execute -> Validate -> Replan)
+                try:
+                    self.update_job_progress(job_id, "Agentic Execution", "Analyzing input, generating extraction plan & running agents", 50.0)
+                    from backend.services.agentic_engine import agentic_execution_engine
+                    
+                    def log_cb(level: str, msg: str):
+                        self.add_log(job_id, level, msg)
 
-                self.update_job_progress(job_id, "Extracting", "Universal schema-guided data extraction", 75.0)
-                extracted_res = extract_universal_document(
-                    bytes_to_use, 
-                    schema_info, 
-                    job.get("file_type", ""), 
-                    text_content=parsed.get("text_content", "")
-                )
+                    agentic_res = agentic_execution_engine.execute_agentic_workflow(
+                        bytes_to_use, 
+                        filename, 
+                        job.get("file_type", ""), 
+                        log_callback=log_cb
+                    )
 
-                schema = extracted_res.get("schema", [])
-                rows = extracted_res.get("rows", [])
-                doc_category = extracted_res.get("documentCategory") or schema_info.get("documentCategory", "General Document")
-                doc_title = extracted_res.get("documentTitle") or schema_info.get("documentTitle", "Extracted Document")
+                    schema = agentic_res.get("schema", [])
+                    rows = agentic_res.get("rows", [])
+                    doc_category = agentic_res.get("documentCategory", "General Document")
+                    doc_title = agentic_res.get("documentTitle", "Extracted Document")
+                    job_final_status = agentic_res.get("status", "Completed")
+
+                except Exception as agentic_err:
+                    self.add_log(job_id, "WARNING", f"Agentic Planner fallback triggered: {agentic_err}")
+                    self.update_job_progress(job_id, "Generating Schema", "Inferring dynamic AI schema with Gemini", 50.0)
+                    schema_info = generate_dynamic_schema(
+                        bytes_to_use, 
+                        job.get("file_type", ""), 
+                        text_content=parsed.get("text_content", "")
+                    )
+
+                    self.update_job_progress(job_id, "Extracting", "Universal schema-guided data extraction", 75.0)
+                    extracted_res = extract_universal_document(
+                        bytes_to_use, 
+                        schema_info, 
+                        job.get("file_type", ""), 
+                        text_content=parsed.get("text_content", "")
+                    )
+
+                    schema = extracted_res.get("schema", [])
+                    rows = extracted_res.get("rows", [])
+                    doc_category = extracted_res.get("documentCategory") or schema_info.get("documentCategory", "General Document")
+                    doc_title = extracted_res.get("documentTitle") or schema_info.get("documentTitle", "Extracted Document")
+                    job_final_status = "Completed"
 
             # 5. Writing Excel
             self.update_job_progress(
@@ -387,15 +469,17 @@ class JobManager:
             
             time.sleep(0.5) # Brief pause for state sync
 
-            # 6. Completed
+            # 6. Completed or Waiting for Human Review
             self.update_job_progress(
-                job_id, "Completed", "Job processing completed successfully", 100.0,
+                job_id, job_final_status, f"Job processing finalized with status: {job_final_status}", 100.0,
                 document_category=doc_category,
                 document_title=doc_title,
                 schema_json=schema,
                 rows_json=rows
             )
+
             self.add_log(job_id, "SUCCESS", f"Extraction completed. {len(schema)} columns, {len(rows)} rows.")
+            self.dispatch_webhook(job_id)
 
         except Exception as e:
             err_msg = str(e)

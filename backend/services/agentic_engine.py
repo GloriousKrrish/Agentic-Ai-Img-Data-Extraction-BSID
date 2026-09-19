@@ -1,280 +1,134 @@
-import io
-import os
-import re
-import csv
-import json
+"""
+Phase 4 & 7: Agentic Execution Engine & Self-Correction Loop
+Orchestrates the ANALYZE -> PLAN -> EXECUTE -> OBSERVE -> VALIDATE -> DIAGNOSE -> REPLAN -> RE-EXECUTE loop,
+tracking step logs, handling bounded retries, and determining HITL state transitions.
+"""
 import time
-import requests
-from pathlib import Path
-import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from PIL import Image, ImageEnhance, ImageOps
-
+import json
+import uuid
+from typing import Dict, Any, List
+from backend.agents.agentic_models import (
+    InputAnalysis, ExtractionPlan, ExecutionStepLog, ConfidenceScoreCard
+)
+from backend.agents.input_analyzer_agent import input_analyzer_agent
+from backend.agents.planner_agent import planner_agent
 from backend.services.schema_generator import generate_dynamic_schema
 from backend.services.universal_extractor import extract_universal_document
+from backend.services.validation_engine import validation_engine
+from backend.services.file_parser import parse_file_content
 
-# =====================================================================
-# AGENT 1: WORKBOOK ANALYZER
-# =====================================================================
-class WorkbookAnalyzerAgent:
-    def analyze(self, file_bytes: bytes, filename: str) -> dict:
-        ext = Path(filename).suffix.lower()
-        url_pattern = re.compile(r'https?://[^\s,\"\']+')
-        url_cells = []
-        headers = []
+class AgenticExecutionEngine:
+    def execute_agentic_workflow(
+        self,
+        file_bytes: bytes,
+        filename: str,
+        mime_type: str = "",
+        user_preset: str = "",
+        log_callback = None
+    ) -> Dict[str, Any]:
+        """
+        Executes complete agentic workflow loop for a document.
+        """
+        step_logs: List[ExecutionStepLog] = []
 
-        if ext == '.csv':
-            decoded = file_bytes.decode('utf-8', errors='ignore')
-            reader = csv.reader(io.StringIO(decoded))
-            for row_idx, row in enumerate(reader, start=1):
-                if row_idx == 1:
-                    headers = [str(c).strip() for c in row]
-                for col_idx, cell in enumerate(row, start=1):
-                    val_str = str(cell).strip()
-                    if url_pattern.search(val_str):
-                        url_cells.append({"row": row_idx, "col": col_idx, "url": url_pattern.search(val_str).group(0)})
-        elif ext in ['.xlsx', '.xls']:
-            wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
-            sheet = wb.active
-            for c in range(1, sheet.max_column + 1):
-                h_val = sheet.cell(1, c).value
-                headers.append(str(h_val or f"Col_{c}").strip())
+        def record_step(agent_name: str, stage: str, status: str, start_t: float, summary: str = "", err: str = None, conf: float = 0.0) -> ExecutionStepLog:
+            log_item = ExecutionStepLog(
+                step_id=f"step-{uuid.uuid4().hex[:6]}",
+                agent_or_tool=agent_name,
+                stage=stage,
+                status=status,
+                start_time=start_t,
+                end_time=time.time(),
+                input_summary=f"File: {filename} ({len(file_bytes)} bytes)",
+                output_summary=summary[:300],
+                error=err,
+                confidence=conf
+            )
+            step_logs.append(log_item)
+            if log_callback:
+                log_callback("INFO" if status != "FAILED" else "ERROR", f"[{agent_name}] {stage}: {status} — {summary[:120]}")
+            return log_item
 
-            for r in range(1, sheet.max_row + 1):
-                for c in range(1, sheet.max_column + 1):
-                    val = sheet.cell(r, c).value
-                    val_str = str(val).strip() if val is not None else ""
-                    match = url_pattern.search(val_str)
-                    if match:
-                        url_cells.append({"row": r, "col": c, "url": match.group(0)})
-            wb.close()
+        # 1. ANALYZE
+        t_start = time.time()
+        analysis: InputAnalysis = input_analyzer_agent.analyze(file_bytes, filename, mime_type)
+        record_step("input_analyzer", "Analyze Input Document", "COMPLETED", t_start, f"Type: {analysis.input_type}, Category: {analysis.document_type}, Complexity: {analysis.complexity}")
+
+        # 2. PLAN
+        t_plan = time.time()
+        plan: ExtractionPlan = planner_agent.create_plan(analysis, user_preset=user_preset)
+        record_step("planner_agent", "Formulate Extraction Plan", "COMPLETED", t_plan, f"Plan ID: {plan.plan_id}, Target: {plan.target_category}, Agents: {', '.join(plan.agents)}")
+
+        # 3. EXECUTE — Schema Generation
+        t_schema = time.time()
+        parsed_file = parse_file_content(file_bytes, filename, mime_type)
+        ocr_text = parsed_file.get("text_content", "")
+
+        schema_info = generate_dynamic_schema(file_bytes, mime_type, text_content=ocr_text)
+        record_step("schema_generator", "Generate Dynamic Schema", "COMPLETED", t_schema, f"Category: {schema_info.get('documentCategory')}, Fields: {len(schema_info.get('fields', []))}")
+
+        # 4. EXECUTE — Multimodal Vision / Document Extraction Pass 1
+        t_ext = time.time()
+        extraction_res = extract_universal_document(file_bytes, schema_info, mime_type, text_content=ocr_text)
+        raw_fields = extraction_res.get("extractedFields", {}) or {}
+        record_step("vision_extraction_agent", "Extract Document Fields (Pass 1)", "COMPLETED", t_ext, f"Extracted {len(raw_fields)} raw fields using {extraction_res.get('modelUsed')}")
+
+        # 5. VALIDATE & SCORE
+        t_val = time.time()
+        schema = extraction_res.get("schema", [])
+        validated_fields, score_card = validation_engine.validate_and_score(raw_fields, plan, ocr_text, schema)
+        record_step("validation_engine", "Evaluate Validation & Scorecard", "COMPLETED", t_val, f"Overall Confidence: {score_card.overall_confidence*100:.1f}%, Trusted: {score_card.is_trusted}", conf=score_card.overall_confidence)
+
+        # 6. DIAGNOSE & REPLAN (Self-Correction Loop)
+        replan_count = 0
+        max_replans = plan.retry_policy.max_replans
+
+        while score_card.overall_confidence < plan.human_review.threshold and replan_count < max_replans:
+            replan_count += 1
+            t_replan = time.time()
+            flagged = score_card.flagged_fields
+            replan_summary = f"Confidence ({score_card.overall_confidence:.2f}) < threshold ({plan.human_review.threshold:.2f}). Flagged fields: {', '.join(flagged[:5])}"
+            record_step("planner_agent", f"Diagnose & Re-plan (Pass {replan_count + 1})", "REPLANNING", t_replan, replan_summary)
+
+            # Re-execute targeted pass with progressive hints
+            targeted_prompt_hint = f"CRITICAL RE-EXTRACTION: Pay extreme attention to missing/low confidence fields: {', '.join(flagged)}. Verify numbers with 1:1 pixel accuracy."
+            retry_res = extract_universal_document(file_bytes, schema_info, mime_type, text_content=f"{ocr_text}\n\n{targeted_prompt_hint}")
+            retry_raw = retry_res.get("extractedFields", {}) or {}
+
+            # Merge improvements
+            for k, val in retry_raw.items():
+                if val and str(val).strip() and not str(validated_fields.get(k, "") or "").strip():
+                    validated_fields[k] = val
+
+            validated_fields, score_card = validation_engine.validate_and_score(validated_fields, plan, ocr_text, schema)
+            record_step("vision_extraction_agent", f"Targeted Re-extraction (Pass {replan_count + 1})", "COMPLETED", t_replan, f"New Overall Confidence: {score_card.overall_confidence*100:.1f}%", conf=score_card.overall_confidence)
+
+        # 7. HITL State Determination
+        final_status = "COMPLETED"
+        if score_card.human_review_required:
+            final_status = "WAITING_FOR_HUMAN_REVIEW"
+
+        record_step("job_manager", "Finalize Job State", "COMPLETED", time.time(), f"Final Status: {final_status}, Trusted: {score_card.is_trusted}")
 
         return {
-            "total_rows": len(url_cells),
-            "headers": headers,
-            "url_tasks": url_cells
+            "status": final_status,
+            "confidence": round(score_card.overall_confidence * 100.0, 1),
+            "scorecard": score_card.dict(),
+            "analysis": analysis.dict(),
+            "plan": plan.dict(),
+            "schema": schema,
+            "rows": [
+                {
+                    "rowIndex": 1,
+                    "fields": validated_fields,
+                    "status": final_status,
+                    "confidence": round(score_card.overall_confidence * 100.0, 1)
+                }
+            ],
+            "extractedFields": validated_fields,
+            "executionLogs": [s.dict() for s in step_logs],
+            "documentCategory": schema_info.get("documentCategory", plan.target_category),
+            "documentTitle": schema_info.get("documentTitle", "Extracted Document")
         }
 
-# =====================================================================
-# AGENT 2: URL VALIDATOR
-# =====================================================================
-class URLValidatorAgent:
-    def validate(self, url: str) -> dict:
-        if not url.startswith("http://") and not url.startswith("https://"):
-            return {"valid": False, "reason": "Invalid URL protocol"}
-        return {"valid": True, "url": url}
-
-# =====================================================================
-# AGENT 3: DOCUMENT FETCHER
-# =====================================================================
-class DocumentFetcherAgent:
-    def fetch(self, url: str, max_retries: int = 3) -> dict:
-        for attempt in range(max_retries):
-            try:
-                res = requests.get(url, timeout=15)
-                if res.status_code == 200 and len(res.content) > 100:
-                    content_type = res.headers.get("Content-Type", "image/jpeg").split(";")[0].strip().lower()
-                    mime_type = "application/pdf" if ("pdf" in url.lower() or "pdf" in content_type) else "image/jpeg"
-                    return {"success": True, "bytes": res.content, "mime_type": mime_type}
-            except Exception as e:
-                if attempt == max_retries - 1:
-                    return {"success": False, "error": str(e)}
-                time.sleep(1.0)
-        return {"success": False, "error": "HTTP Download Failed"}
-
-# =====================================================================
-# AGENT 4: IMAGE PREPROCESSOR
-# =====================================================================
-from backend.services.image_preprocessor import preprocess_image
-
-class ImagePreprocessorAgent:
-    def preprocess(self, doc_bytes: bytes, mime_type: str) -> bytes:
-        if mime_type == "application/pdf":
-            return doc_bytes
-        try:
-            enhanced_bytes, _ = preprocess_image(doc_bytes)
-            return enhanced_bytes
-        except Exception:
-            return doc_bytes
-
-# =====================================================================
-# AGENT 5: CLASSIFIER & AGENT 6/7/8: SEMANTIC EXTRACTION AGENTS
-# =====================================================================
-SEMANTIC_FULL_SCHEMA = {
-    "documentCategory": "Invoice / Transaction Document",
-    "documentTitle": "Intelligent Extracted Invoice Data",
-    "summary": "Extracted semantic key-value fields from document",
-    "fields": [
-        {"key": "invoiceNumber", "label": "Invoice Number", "type": "string", "description": "Invoice number or bill reference"},
-        {"key": "invoiceDate", "label": "Invoice Date", "type": "string", "description": "Invoice issue date"},
-        {"key": "customerName", "label": "Customer Name", "type": "string", "description": "Customer full name"},
-        {"key": "customerMobile", "label": "Customer Mobile", "type": "string", "description": "Customer phone number"},
-        {"key": "vehicleNumber", "label": "Vehicle Number", "type": "string", "description": "Vehicle registration number (e.g. AP39NT1461)"},
-        {"key": "vehicleModel", "label": "Vehicle Model", "type": "string", "description": "Vehicle model name"},
-        {"key": "tyreSize", "label": "Tyre Size", "type": "string", "description": "Tyre size specification (e.g. 235/65R17)"},
-        {"key": "pattern", "label": "Pattern", "type": "string", "description": "Tyre pattern"},
-        {"key": "serialNumber", "label": "Serial Number", "type": "string", "description": "Product serial number"},
-        {"key": "dealerName", "label": "Dealer Name", "type": "string", "description": "Dealer or shop name"},
-        {"key": "price", "label": "Price / Total", "type": "number", "description": "Total price or amount"},
-        {"key": "remarks", "label": "Remarks", "type": "string", "description": "Additional notes"}
-    ]
-}
-
-class ExtractionAgent:
-    def extract(self, doc_bytes: bytes, mime_type: str) -> dict:
-        try:
-            schema_info = generate_dynamic_schema(doc_bytes, mime_type)
-            ext_res = extract_universal_document(doc_bytes, schema_info, mime_type)
-            rows = ext_res.get("rows", [])
-            if rows and len(rows) > 0:
-                return {
-                    "category": schema_info.get("documentCategory", "Invoice Document"),
-                    "fields": rows[0].get("fields", {})
-                }
-        except Exception:
-            pass
-
-        # Fallback to semantic schema
-        try:
-            ext_res = extract_universal_document(doc_bytes, SEMANTIC_FULL_SCHEMA, mime_type)
-            rows = ext_res.get("rows", [])
-            if rows and len(rows) > 0:
-                return {
-                    "category": "Invoice Document",
-                    "fields": rows[0].get("fields", {})
-                }
-        except Exception:
-            pass
-
-        return {"category": "General Document", "fields": {}}
-
-# =====================================================================
-# AGENT 9: SCHEMA EVOLUTION AGENT
-# =====================================================================
-class SchemaEvolutionAgent:
-    def __init__(self):
-        self.field_keys = set()
-
-    def register(self, fields: dict) -> list[str]:
-        for k in fields.keys():
-            self.field_keys.add(k)
-        return sorted(list(self.field_keys))
-
-# =====================================================================
-# AGENT 10: VALIDATION AGENT
-# =====================================================================
-from backend.services.data_sanitizer import perform_math_audit
-
-class ValidationAgent:
-    def validate(self, fields: dict) -> dict:
-        confidence = 95.0
-        warnings = []
-        if not fields.get("invoiceNumber") and not fields.get("vehicleNumber"):
-            warnings.append("Missing primary reference number")
-            confidence -= 10.0
-        if not any(fields.get(k) for k in ["price", "grandTotal", "total", "totalAmount", "subTotal", "amount"]):
-            warnings.append("Missing financial total amount")
-            confidence -= 5.0
-
-        math_res = perform_math_audit(fields)
-        if not math_res.get("passed"):
-            warnings.extend(math_res.get("warnings", []))
-            confidence -= 5.0
-
-        return {"confidence": max(confidence, 60.0), "warnings": warnings}
-
-
-# =====================================================================
-# AGENT 11: RESILIENT EXCEL WRITER
-# =====================================================================
-from backend.services.data_sanitizer import normalize_field
-
-class ResilientExcelWriterAgent:
-    def write_workbook(self, items: list[dict], output_path: str):
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Extracted Intelligence Data"
-
-        if not items:
-            ws.append(["No Data Extracted"])
-            wb.save(output_path)
-            return
-
-        all_keys = set()
-        for it in items:
-            for k in it.get("fields", {}).keys():
-                all_keys.add(k)
-
-        field_keys = sorted(list(all_keys))
-        headers = [k.replace('_', ' ').title() for k in field_keys]
-        ws.append(headers)
-
-        header_fill = PatternFill(start_color="1E293B", end_color="1E293B", fill_type="solid")
-        header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-        thin_border = Border(
-            left=Side(style='thin', color='CBD5E1'),
-            right=Side(style='thin', color='CBD5E1'),
-            top=Side(style='thin', color='CBD5E1'),
-            bottom=Side(style='thin', color='CBD5E1')
-        )
-
-        for col_num in range(1, len(headers) + 1):
-            cell = ws.cell(row=1, column=col_num)
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-
-        for row_idx, it in enumerate(items, 2):
-            f_dict = it.get("fields", {})
-            row_fill = PatternFill(start_color="F8FAFC" if row_idx % 2 == 0 else "FFFFFF", fill_type="solid")
-            for col_idx, fk in enumerate(field_keys, 1):
-                raw_v = f_dict.get(fk)
-                norm_v = normalize_field(fk, raw_v)
-                cell = ws.cell(row=row_idx, column=col_idx)
-                
-                if not norm_v:
-                    cell.value = None
-                else:
-                    fk_lower = fk.lower()
-                    if any(num_k in fk_lower for num_k in ["amount", "cost", "price", "total", "salary", "revenue", "quantity", "units"]):
-                        try:
-                            if '.' in norm_v:
-                                cell.value = float(norm_v)
-                                cell.number_format = '#,##0.00'
-                            else:
-                                cell.value = int(norm_v)
-                                cell.number_format = '#,##0'
-                        except ValueError:
-                            cell.value = norm_v
-                    else:
-                        cell.value = norm_v
-
-                cell.fill = row_fill
-                cell.border = thin_border
-                cell.font = Font(name="Calibri", size=10)
-                
-                fk_lower = fk.lower()
-                if any(num_k in fk_lower for num_k in ["amount", "cost", "price", "total", "salary", "revenue", "quantity"]):
-                    cell.alignment = Alignment(horizontal="right", vertical="center")
-                elif any(id_k in fk_lower for id_k in ["number", "id", "code", "mobile", "phone", "date", "vehicle"]):
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
-                else:
-                    cell.alignment = Alignment(horizontal="left", vertical="center")
-
-        # Auto column widths
-        for col in ws.columns:
-            max_len = max(len(str(cell.value or '')) for cell in col)
-            col_letter = openpyxl.utils.get_column_letter(col[0].column)
-            ws.column_dimensions[col_letter].width = max(max_len + 5, 14)
-
-        tmp_path = f"{output_path}.tmp"
-        try:
-            wb.save(tmp_path)
-            if os.path.exists(output_path):
-                os.remove(output_path)
-            os.replace(tmp_path, output_path)
-        except Exception:
-            try:
-                wb.save(output_path)
-            except Exception:
-                pass
+agentic_execution_engine = AgenticExecutionEngine()
