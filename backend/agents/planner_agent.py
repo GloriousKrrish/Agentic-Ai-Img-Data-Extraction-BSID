@@ -38,7 +38,12 @@ class PlannerAgent:
             target_category = "Legal Contract"
 
         # 2. Select Required Agents
-        selected_agents = ["input_analyzer", "schema_generator"]
+        selected_agents = ["input_analyzer"]
+
+        if analysis.input_type == "pdf":
+            selected_agents.extend(["pdf_intelligence_agent", "pdf_aggregator_engine"])
+
+        selected_agents.append("schema_generator")
 
         if analysis.requires_ocr:
             selected_agents.append("ocr_agent")
@@ -52,9 +57,10 @@ class PlannerAgent:
         selected_agents.extend(["validation_agent", "confidence_engine", "dynamic_exporter"])
 
         # 3. Formulate Tools & Processing Strategy
-        tools = ["pdf_parser", "gemini_multimodal", "image_preprocessor", "openpyxl_exporter"]
+        tools = ["pdf_parser", "fitz_renderer", "gemini_multimodal", "image_preprocessor", "openpyxl_exporter"]
         if analysis.requires_ocr:
             tools.append("tesseract_ocr")
+
 
         processing_strat = ProcessingStrategy(
             parallelizable=analysis.complexity != "high",

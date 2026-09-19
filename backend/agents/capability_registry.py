@@ -100,4 +100,23 @@ class CapabilityRegistry:
             output_type="bytes"
         ))
 
+        self.register(AgentCapability(
+            name="pdf_intelligence_agent",
+            label="PDF Intelligence & High-Res Renderer",
+            purpose="Analyzes font counts, text density, image density, page classification, and renders 300 DPI JPEGs",
+            supported_input_types=["pdf"],
+            capabilities=["pdf_intelligence", "pdf_page_classification", "pdf_page_rendering"],
+            output_type="PDFDocumentAnalysis"
+        ))
+
+        self.register(AgentCapability(
+            name="pdf_aggregator_engine",
+            label="Cross-Page Aggregator & Table Continuation Engine",
+            purpose="Stitches multi-page continuation line items, deduplicates headers, and resolves cross-page field conflicts",
+            supported_input_types=["pdf", "list"],
+            capabilities=["cross_page_aggregation", "pdf_table_continuation", "cross_page_context"],
+            output_type="AggregatedDocumentResult"
+        ))
+
 capability_registry = CapabilityRegistry()
+

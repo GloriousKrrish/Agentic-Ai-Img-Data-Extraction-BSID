@@ -59,10 +59,108 @@ class AgenticExecutionEngine:
         plan: ExtractionPlan = planner_agent.create_plan(analysis, user_preset=user_preset)
         record_step("planner_agent", "Formulate Extraction Plan", "COMPLETED", t_plan, f"Plan ID: {plan.plan_id}, Target: {plan.target_category}, Agents: {', '.join(plan.agents)}")
 
-        # 3. EXECUTE — Schema Generation
+        # Check if PDF input -> execute multi-page / scanned PDF intelligence workflow
+        if analysis.input_type == "pdf":
+            from backend.agents.pdf_intelligence_agent import pdf_intelligence_agent
+            from backend.services.pdf_aggregator_engine import pdf_aggregator_engine
+            from backend.agents.pdf_models import ExtractedPageResult
+
+            t_pdf_anal = time.time()
+            pdf_analysis = pdf_intelligence_agent.analyze_pdf(file_bytes)
+            record_step(
+                "pdf_intelligence_agent",
+                "PDF Intelligence Analysis",
+                "COMPLETED",
+                t_pdf_anal,
+                f"Total Pages: {pdf_analysis.total_pages}, Scanned: {pdf_analysis.scanned_page_count}, Tables: {pdf_analysis.table_page_count}, Complexity: {pdf_analysis.estimated_complexity}"
+            )
+
+            # Generate Schema
+            t_schema = time.time()
+            parsed_file = parse_file_content(file_bytes, filename, mime_type)
+            ocr_text = parsed_file.get("text_content", "")
+            schema_info = generate_dynamic_schema(file_bytes, mime_type, text_content=ocr_text)
+            schema = schema_info.get("fields", [])
+            record_step("schema_generator", "Generate Dynamic Schema", "COMPLETED", t_schema, f"Category: {schema_info.get('documentCategory')}, Fields: {len(schema)}")
+
+            # Process Pages in Adaptive Chunks
+            chunk_size = pdf_analysis.recommended_chunk_size
+            total_pages = pdf_analysis.total_pages
+            page_results: List[ExtractedPageResult] = []
+
+            for chunk_start in range(0, total_pages, chunk_size):
+                chunk_end = min(chunk_start + chunk_size, total_pages)
+                chunk_num = (chunk_start // chunk_size) + 1
+                t_chunk = time.time()
+
+                for p_idx in range(chunk_start, chunk_end):
+                    page_num = p_idx + 1
+                    p_class = pdf_analysis.page_classifications[p_idx] if p_idx < len(pdf_analysis.page_classifications) else None
+                    is_scanned_page = p_class.requires_ocr if p_class else False
+
+                    # Render page JPEG if scanned or image heavy
+                    page_bytes = file_bytes
+                    page_mime = mime_type
+                    if is_scanned_page or (p_class and p_class.type in ["SCANNED", "IMAGE_HEAVY", "TABLE_HEAVY"]):
+                        rendered_jpeg = pdf_intelligence_agent.render_page_to_jpeg(file_bytes, page_num, dpi=300)
+                        if rendered_jpeg:
+                            page_bytes = rendered_jpeg
+                            page_mime = "image/jpeg"
+
+                    # Extract page data
+                    page_res = extract_universal_document(page_bytes, schema_info, page_mime, text_content=ocr_text)
+                    page_fields = page_res.get("extractedFields", {}) or {}
+                    page_items = page_fields.get("line_items") or page_fields.get("lineItems") or []
+
+                    page_results.append(ExtractedPageResult(
+                        page_number=page_num,
+                        chunk_number=chunk_num,
+                        extracted_fields=page_fields,
+                        line_items=page_items if isinstance(page_items, list) else [],
+                        confidence=page_res.get("confidence", 85.0),
+                        status="COMPLETED",
+                        is_scanned=is_scanned_page
+                    ))
+
+                record_step("pdf_intelligence_agent", f"Process PDF Chunk {chunk_num} (Pages {chunk_start+1}-{chunk_end})", "COMPLETED", t_chunk, f"Processed {chunk_end - chunk_start} pages in Chunk {chunk_num}")
+
+            # Cross-Page Aggregation & Table Continuation
+            t_agg = time.time()
+            aggregated = pdf_aggregator_engine.aggregate_pages(page_results)
+            record_step("pdf_aggregator_engine", "Cross-Page Table Continuation & Aggregation", "COMPLETED", t_agg, f"Stitched {len(aggregated.line_items)} line items across {total_pages} pages. Conflicts: {len(aggregated.conflicts)}")
+
+            validated_fields, score_card = validation_engine.validate_and_score(aggregated.document_fields, plan, ocr_text, schema)
+            
+            final_status = "COMPLETED" if (score_card.is_trusted and not aggregated.conflicts) else "WAITING_FOR_HUMAN_REVIEW"
+            record_step("job_manager", "Finalize Multi-Page PDF Job State", "COMPLETED", time.time(), f"Final Status: {final_status}, Overall Conf: {score_card.overall_confidence*100:.1f}%")
+
+            return {
+                "status": final_status,
+                "confidence": round(score_card.overall_confidence * 100.0, 1),
+                "scorecard": score_card.dict(),
+                "pdfAnalysis": pdf_analysis.dict(),
+                "analysis": analysis.dict(),
+                "plan": plan.dict(),
+                "schema": schema,
+                "rows": [
+                    {
+                        "rowIndex": 1,
+                        "fields": validated_fields,
+                        "status": final_status,
+                        "confidence": round(score_card.overall_confidence * 100.0, 1)
+                    }
+                ],
+                "extractedFields": validated_fields,
+                "executionLogs": [s.dict() for s in step_logs],
+                "documentCategory": schema_info.get("documentCategory", plan.target_category),
+                "documentTitle": schema_info.get("documentTitle", f"PDF Document ({total_pages} pages)")
+            }
+
+        # 3. EXECUTE — Schema Generation (Standard Non-PDF Flow)
         t_schema = time.time()
         parsed_file = parse_file_content(file_bytes, filename, mime_type)
         ocr_text = parsed_file.get("text_content", "")
+
 
         schema_info = generate_dynamic_schema(file_bytes, mime_type, text_content=ocr_text)
         record_step("schema_generator", "Generate Dynamic Schema", "COMPLETED", t_schema, f"Category: {schema_info.get('documentCategory')}, Fields: {len(schema_info.get('fields', []))}")
