@@ -10,7 +10,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from backend.agents.schema_models import (
-    CrossFieldRuleOutcome, ExtractionSchema, FieldValidationOutcome,
+    CrossFieldRule, CrossFieldRuleOutcome, ExtractionSchema, FieldValidationOutcome,
     RuleSeverity, SchemaExtractionReport, SchemaField, SchemaFieldType,
     SchemaValidationResult
 )
