@@ -2,6 +2,8 @@
 Phase 4 & 7: Agentic Execution Engine & Self-Correction Loop
 Orchestrates the ANALYZE -> PLAN -> EXECUTE -> OBSERVE -> VALIDATE -> DIAGNOSE -> REPLAN -> RE-EXECUTE loop,
 tracking step logs, handling bounded retries, and determining HITL state transitions.
+
+Phase 4 extension: supports optional user-defined ExtractionSchema for schema-constrained extraction.
 """
 import time
 import json
@@ -24,7 +26,8 @@ class AgenticExecutionEngine:
         filename: str,
         mime_type: str = "",
         user_preset: str = "",
-        log_callback = None
+        log_callback=None,
+        user_schema=None  # Optional[ExtractionSchema] for Phase 4 schema-constrained extraction
     ) -> Dict[str, Any]:
         """
         Executes complete agentic workflow loop for a document.
@@ -56,8 +59,8 @@ class AgenticExecutionEngine:
 
         # 2. PLAN
         t_plan = time.time()
-        plan: ExtractionPlan = planner_agent.create_plan(analysis, user_preset=user_preset)
-        record_step("planner_agent", "Formulate Extraction Plan", "COMPLETED", t_plan, f"Plan ID: {plan.plan_id}, Target: {plan.target_category}, Agents: {', '.join(plan.agents)}")
+        plan: ExtractionPlan = planner_agent.create_plan(analysis, user_preset=user_preset, user_schema=user_schema)
+        record_step("planner_agent", "Formulate Extraction Plan", "COMPLETED", t_plan, f"Plan ID: {plan.plan_id}, Target: {plan.target_category}, Strategy: {plan.schema_strategy}, Agents: {', '.join(plan.agents)}")
 
         # Check if PDF input -> execute multi-page / scanned PDF intelligence workflow
         if analysis.input_type == "pdf":
@@ -174,19 +177,52 @@ class AgenticExecutionEngine:
                 "documentTitle": schema_info.get("documentTitle", f"PDF Document ({total_pages} pages)")
             }
 
-        # 3. EXECUTE — Schema Generation (Standard Non-PDF Flow)
+        # 3. EXECUTE — Schema Generation or Schema-Constrained Extraction (Standard Non-PDF Flow)
         t_schema = time.time()
         parsed_file = parse_file_content(file_bytes, filename, mime_type)
         ocr_text = parsed_file.get("text_content", "")
 
+        # Phase 4: user-defined schema path
+        if user_schema is not None:
+            from backend.services.schema_extraction_engine import schema_extraction_engine
+            record_step("schema_extraction_engine", "Schema-Constrained Extraction (Phase 4)", "RUNNING", t_schema,
+                        f"Schema: '{user_schema.name}', Fields: {len(user_schema.fields)}, Required: {len(user_schema.required_fields)}")
+            schema_extracted, schema_report = schema_extraction_engine.extract_with_schema(
+                schema=user_schema,
+                file_bytes=file_bytes,
+                mime_type=mime_type,
+                text_content=ocr_text,
+                plan=plan.dict()
+            )
+            record_step("schema_extraction_engine", "Schema-Constrained Extraction (Phase 4)", "COMPLETED", t_schema,
+                        f"Completeness: {schema_report.completeness_pct}%, Quality: {schema_report.quality_score:.2f}, Missing Required: {schema_report.missing_required}")
 
-        schema_info = generate_dynamic_schema(file_bytes, mime_type, text_content=ocr_text)
-        record_step("schema_generator", "Generate Dynamic Schema", "COMPLETED", t_schema, f"Category: {schema_info.get('documentCategory')}, Fields: {len(schema_info.get('fields', []))}")
+            # Build schema_info in the existing format for downstream compatibility
+            schema_info = {
+                "documentCategory": user_schema.domain.title(),
+                "documentTitle": user_schema.name,
+                "summary": user_schema.description,
+                "fields": [{"key": f.key, "label": f.label, "type": f.field_type.value, "description": f.description} for f in user_schema.fields]
+            }
+            raw_fields = schema_extracted
+
+            # Attach schema validation report
+            schema_report_dict = schema_report.model_dump()
+        else:
+            schema_info = generate_dynamic_schema(file_bytes, mime_type, text_content=ocr_text)
+            schema_report_dict = {}
+            raw_fields = None  # Will be set by extraction below
+
+        if raw_fields is None:  # Standard auto-discovery path
+            record_step("schema_generator", "Generate Dynamic Schema", "COMPLETED", t_schema, f"Category: {schema_info.get('documentCategory')}, Fields: {len(schema_info.get('fields', []))}")
 
         # 4. EXECUTE — Multimodal Vision / Document Extraction Pass 1
         t_ext = time.time()
-        extraction_res = extract_universal_document(file_bytes, schema_info, mime_type, text_content=ocr_text)
-        raw_fields = extraction_res.get("extractedFields", {}) or {}
+        if raw_fields is None:  # Standard path
+            extraction_res = extract_universal_document(file_bytes, schema_info, mime_type, text_content=ocr_text)
+            raw_fields = extraction_res.get("extractedFields", {}) or {}
+        else:
+            extraction_res = {"extractedFields": raw_fields, "schema": schema_info.get("fields", []), "modelUsed": "schema_extraction_engine"}
         record_step("vision_extraction_agent", "Extract Document Fields (Pass 1)", "COMPLETED", t_ext, f"Extracted {len(raw_fields)} raw fields using {extraction_res.get('modelUsed')}")
 
         # 5. ACCURACY, CONSENSUS, EVIDENCE & SELF-CORRECTION PASS
@@ -256,7 +292,9 @@ class AgenticExecutionEngine:
             "extractedFields": validated_fields,
             "executionLogs": [s.dict() for s in step_logs],
             "documentCategory": schema_info.get("documentCategory", plan.target_category),
-            "documentTitle": schema_info.get("documentTitle", "Extracted Document")
+            "documentTitle": schema_info.get("documentTitle", "Extracted Document"),
+            # Phase 4: schema validation report (empty dict if no user_schema)
+            "schemaValidation": schema_report_dict
         }
 
 agentic_execution_engine = AgenticExecutionEngine()

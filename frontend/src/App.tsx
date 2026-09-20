@@ -9,6 +9,7 @@ import { Results } from './pages/Results';
 import { InvoiceProcessing } from './pages/InvoiceProcessing';
 import { BatchProcessing } from './pages/BatchProcessing';
 import { Settings } from './pages/Settings';
+import { SchemaBuilder } from './pages/SchemaBuilder';
 
 import type { SystemKPIs, WorkerNode, UniversalDocumentDataset, LogEntry } from './types';
 import { getApiUrl, getWsUrl } from './config/api';
@@ -138,11 +139,11 @@ export const App: React.FC = () => {
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <Header 
+        <Header
           wsConnected={wsConnected}
           onRefresh={fetchJobState}
           title="Universal AI Document Intelligence Platform"
-          subtitle="Dynamic Schema Discovery & Multimodal Extraction Engine"
+          subtitle="Dynamic Schema Discovery · Multi-Phase Agentic Intelligence v4.0.0"
         />
 
         <main className="flex-1 overflow-y-auto pb-12">
@@ -202,6 +203,7 @@ export const App: React.FC = () => {
               }}
             />
           )}
+          {activeTab === 'schema-builder' && <SchemaBuilder />}
           {activeTab === 'settings' && <Settings />}
         </main>
       </div>

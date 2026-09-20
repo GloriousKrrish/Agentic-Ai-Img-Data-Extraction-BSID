@@ -1,14 +1,15 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  Upload, 
-  Table, 
-  ScanSearch, 
-  Layers, 
-  Settings, 
-  Activity, 
+import {
+  LayoutDashboard,
+  Upload,
+  Table,
+  ScanSearch,
+  Layers,
+  Settings,
+  Activity,
   Bot,
-  Sparkles
+  Sparkles,
+  Brain
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,6 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, pendi
     { id: 'upload', label: 'Upload & Extract', icon: Upload, group: 'main' },
     { id: 'inspector', label: 'Document Inspector', icon: ScanSearch, group: 'main' },
     { id: 'batch', label: 'Batch Queue', icon: Layers, group: 'main', badge: pendingCount > 0 ? `${pendingCount}` : undefined },
+    { id: 'schema-builder', label: 'Schema Builder', icon: Brain, group: 'main' },
     { id: 'results', label: 'Extracted Results', icon: Table, group: 'data', badge: jobsCount > 0 ? `${jobsCount}` : undefined },
     { id: 'processing', label: 'Job Telemetry', icon: Activity, group: 'data' },
     { id: 'dashboard', label: 'Analytics Dashboard', icon: LayoutDashboard, group: 'data' },
@@ -179,8 +181,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, pendi
       }}>
         <Sparkles size={14} color="#4F46E5" />
         <div>
-          <div style={{ fontSize: 11, color: '#0F172A', fontWeight: 600 }}>Agentic AI Engine v3.5</div>
-          <div style={{ fontSize: 10, color: '#64748B', fontWeight: 500 }}>Multimodal Vision &amp; OpenCV</div>
+          <div style={{ fontSize: 11, color: '#0F172A', fontWeight: 600 }}>Agentic AI Engine v4.0.0</div>
+          <div style={{ fontSize: 10, color: '#64748B', fontWeight: 500 }}>Custom Schema Intelligence</div>
         </div>
       </div>
     </aside>

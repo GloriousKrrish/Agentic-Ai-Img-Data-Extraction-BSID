@@ -66,10 +66,12 @@ class JobManager:
                 document_title TEXT,
                 schema_json TEXT,
                 rows_json TEXT,
-                error TEXT
+                error TEXT,
+                user_schema_id TEXT,
+                schema_validation_json TEXT
             )
             """)
-            
+
             cursor.execute("""
             CREATE TABLE IF NOT EXISTS job_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,6 +89,17 @@ class JobManager:
                 value TEXT NOT NULL
             )
             """)
+
+            # Phase 4: Add new columns if they don't exist (safe for existing DBs)
+            try:
+                cursor.execute("ALTER TABLE jobs ADD COLUMN user_schema_id TEXT")
+            except Exception:
+                pass  # Column already exists
+            try:
+                cursor.execute("ALTER TABLE jobs ADD COLUMN schema_validation_json TEXT")
+            except Exception:
+                pass  # Column already exists
+
             conn.commit()
 
     def get_setting(self, key: str, default: str = "") -> str:
@@ -123,9 +136,32 @@ class JobManager:
         return key
 
 
-    def create_job(self, filename: str, file_bytes: bytes, mime_type: str = "") -> dict:
+    def create_job(self, filename: str, file_bytes: bytes, mime_type: str = "",
+                   user_schema_id: str = "", user_schema_json: dict = None) -> dict:
+        """
+        Creates a new extraction job.
+        Phase 4: accepts optional user_schema_id (load from store) or user_schema_json (inline).
+        """
         job_id = f"job-{uuid.uuid4().hex[:8]}"
         created_at = datetime.utcnow().isoformat() + "Z"
+
+        # Phase 4: resolve user_schema
+        resolved_schema = None
+        resolved_schema_id = user_schema_id or ""
+        if user_schema_json:
+            try:
+                from backend.services.schema_intelligence_engine import schema_intelligence_engine
+                resolved_schema = schema_intelligence_engine.parse_schema(user_schema_json, source="inline")
+                resolved_schema_id = resolved_schema.schema_id
+            except Exception as e:
+                print(f"JobManager: Failed to parse inline user_schema_json: {e}")
+        elif user_schema_id:
+            try:
+                from backend.services.schema_store import schema_store
+                resolved_schema = schema_store.get_schema(user_schema_id)
+            except Exception as e:
+                print(f"JobManager: Failed to load schema {user_schema_id}: {e}")
+
         
         # Determine pipeline route automatically (Single Document vs Batch Dataset)
         routing_info = determine_pipeline_type(file_bytes, filename, mime_type)
@@ -147,23 +183,24 @@ class JobManager:
             cursor.execute("""
             INSERT INTO jobs (
                 job_id, filename, file_type, file_path, status, current_stage, 
-                current_worker, progress, created_at, document_category, schema_json, rows_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                current_worker, progress, created_at, document_category, schema_json, rows_json, user_schema_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 job_id, filename, mime_type or "unknown", str(saved_file_path),
                 "Analyzing", initial_stage, worker_label,
-                0.0, created_at, category, json.dumps([]), json.dumps([])
+                0.0, created_at, category, json.dumps([]), json.dumps([]), resolved_schema_id or None
             ))
             conn.commit()
 
-        self.add_log(job_id, "INFO", f"Pipeline Router: Assigned to {pipeline_type} ({routing_info['reason']})")
+        if resolved_schema:
+            self.add_log(job_id, "INFO", f"Phase 4: Schema-constrained extraction with schema '{resolved_schema.name}' ({len(resolved_schema.fields)} fields)")
 
         if pipeline_type == "SINGLE_DOCUMENT" or IS_VERCEL:
-            # Single documents execute directly via single document pipeline (NO legacy batch queue, NO worker script, NO row 991)
-            self._run_job_pipeline(job_id)
+            # Single documents execute directly via single document pipeline
+            self._run_job_pipeline(job_id, user_schema=resolved_schema)
         else:
             # Multi-row batch datasets start asynchronous background processing
-            thread = threading.Thread(target=self._run_job_pipeline, args=(job_id,), daemon=True)
+            thread = threading.Thread(target=self._run_job_pipeline, args=(job_id,), kwargs={"user_schema": resolved_schema}, daemon=True)
             thread.start()
 
         return self.get_job(job_id)
@@ -216,14 +253,19 @@ class JobManager:
             row = cursor.fetchone()
             if not row:
                 return None
-            
+
             job = dict(row)
             job["schema"] = json.loads(job["schema_json"]) if job.get("schema_json") else []
             job["rows"] = json.loads(job["rows_json"]) if job.get("rows_json") else []
-            
+
+            # Phase 4: include schema validation report and user schema ID
+            sv_raw = job.get("schema_validation_json")
+            job["schemaValidation"] = json.loads(sv_raw) if sv_raw else {}
+            job["userSchemaId"] = job.get("user_schema_id") or ""
+
             cursor.execute("SELECT timestamp, level, message FROM job_logs WHERE job_id = ? ORDER BY id ASC", (job_id,))
             job["logs"] = [dict(log_row) for log_row in cursor.fetchall()]
-            
+
             return job
 
     def get_all_jobs(self, limit: int = 50) -> list[dict]:
@@ -327,7 +369,7 @@ class JobManager:
             self.add_log(job_id, "ERROR", f"Webhook delivery error: {e}")
 
 
-    def _run_job_pipeline(self, job_id: str):
+    def _run_job_pipeline(self, job_id: str, user_schema=None):
         job = self.get_job(job_id)
         if not job:
             return
@@ -423,10 +465,11 @@ class JobManager:
                         self.add_log(job_id, level, msg)
 
                     agentic_res = agentic_execution_engine.execute_agentic_workflow(
-                        bytes_to_use, 
-                        filename, 
-                        job.get("file_type", ""), 
-                        log_callback=log_cb
+                        bytes_to_use,
+                        filename,
+                        job.get("file_type", ""),
+                        log_callback=log_cb,
+                        user_schema=user_schema
                     )
 
                     schema = agentic_res.get("schema", [])
@@ -434,6 +477,19 @@ class JobManager:
                     doc_category = agentic_res.get("documentCategory", "General Document")
                     doc_title = agentic_res.get("documentTitle", "Extracted Document")
                     job_final_status = agentic_res.get("status", "Completed")
+
+                    # Phase 4: persist schema validation report if present
+                    schema_val = agentic_res.get("schemaValidation", {})
+                    if schema_val:
+                        try:
+                            with self._get_connection() as conn2:
+                                conn2.execute(
+                                    "UPDATE jobs SET schema_validation_json = ? WHERE job_id = ?",
+                                    (json.dumps(schema_val), job_id)
+                                )
+                                conn2.commit()
+                        except Exception:
+                            pass
 
                 except Exception as agentic_err:
                     self.add_log(job_id, "WARNING", f"Agentic Planner fallback triggered: {agentic_err}")

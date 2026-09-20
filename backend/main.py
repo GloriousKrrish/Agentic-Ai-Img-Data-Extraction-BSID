@@ -1,10 +1,11 @@
 import asyncio
 import time
 import json
-from fastapi import FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
 import os
 
 import backend.config as config
@@ -157,17 +158,34 @@ def reset_system_state():
 # =========================================================
 
 @app.post("/api/jobs", status_code=201)
-async def create_job_endpoint(file: UploadFile = File(...)):
+async def create_job_endpoint(
+    file: UploadFile = File(...),
+    schema_id: Optional[str] = Form(None),
+    schema_json: Optional[str] = Form(None)
+):
     """
     Creates a new persistent processing job.
-    Returns job_id and status in <50ms while processing executes asynchronously on background worker threads.
+    Phase 4: Optionally accepts schema_id or schema_json to trigger schema-constrained extraction.
+    Returns job_id and status in <50ms while processing executes asynchronously.
     """
     try:
         content = await file.read()
         mime = file.content_type or "application/octet-stream"
         filename = file.filename or "uploaded_document"
-        
-        job = job_manager.create_job(filename, content, mime)
+
+        # Phase 4: parse inline schema_json if provided
+        parsed_schema_json = None
+        if schema_json:
+            try:
+                parsed_schema_json = json.loads(schema_json)
+            except json.JSONDecodeError:
+                parsed_schema_json = {"nl_text": schema_json}  # treat as NL
+
+        job = job_manager.create_job(
+            filename, content, mime,
+            user_schema_id=schema_id or "",
+            user_schema_json=parsed_schema_json
+        )
         return {
             "status": "SUCCESS",
             "jobId": job["job_id"],
@@ -584,6 +602,224 @@ async def websocket_endpoint(websocket: WebSocket):
         ws_manager.disconnect(websocket)
     except Exception:
         ws_manager.disconnect(websocket)
+
+
+
+# =====================================================================
+# PHASE 4: CUSTOM SCHEMA INTELLIGENCE REST APIs
+# =====================================================================
+
+class SchemaCreateRequest(BaseModel):
+    name: str
+    domain: str = "custom"
+    description: str = ""
+    fields: list = []
+    tables: list = []
+    cross_field_rules: list = []
+    tags: list = []
+
+class NLToSchemaRequest(BaseModel):
+    nl_text: str
+
+class JSONSchemaImportRequest(BaseModel):
+    json_schema: dict
+    name: str = ""
+
+class SchemaCoverageRequest(BaseModel):
+    document_text: str
+
+class SchemaDiffRequest(BaseModel):
+    version_id_a: str
+    version_id_b: str
+
+@app.post("/api/schemas", status_code=201)
+def create_schema_endpoint(req: SchemaCreateRequest):
+    """Phase 4: Create and persist a new custom extraction schema."""
+    from backend.services.schema_intelligence_engine import schema_intelligence_engine
+    from backend.services.schema_store import schema_store
+
+    raw = req.dict()
+    schema = schema_intelligence_engine.parse_schema(raw, source="user")
+    is_valid, errors = schema_intelligence_engine.validate_schema(schema)
+    if not is_valid:
+        raise HTTPException(status_code=422, detail={"errors": errors})
+
+    schema = schema_intelligence_engine.normalize_schema(schema)
+    saved = schema_store.save_schema(schema)
+    return {"status": "CREATED", "schema": saved.model_dump()}
+
+
+@app.get("/api/schemas")
+def list_schemas_endpoint():
+    """Phase 4: List all saved extraction schemas."""
+    from backend.services.schema_store import schema_store
+    return schema_store.list_schemas()
+
+
+@app.get("/api/schemas/{schema_id}")
+def get_schema_endpoint(schema_id: str):
+    """Phase 4: Retrieve a schema by ID."""
+    from backend.services.schema_store import schema_store
+    schema = schema_store.get_schema(schema_id)
+    if not schema:
+        raise HTTPException(status_code=404, detail=f"Schema {schema_id} not found.")
+    return schema.model_dump()
+
+
+@app.put("/api/schemas/{schema_id}")
+def update_schema_endpoint(schema_id: str, req: SchemaCreateRequest):
+    """Phase 4: Update a schema (creates a new version record)."""
+    from backend.services.schema_store import schema_store
+    from backend.services.schema_intelligence_engine import schema_intelligence_engine
+
+    existing = schema_store.get_schema(schema_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail=f"Schema {schema_id} not found.")
+
+    updates = {k: v for k, v in req.dict().items() if v is not None}
+    updated = schema_store.update_schema(schema_id, updates, previous_schema=existing)
+    return {"status": "UPDATED", "schema": updated.model_dump()}
+
+
+@app.delete("/api/schemas/{schema_id}")
+def delete_schema_endpoint(schema_id: str):
+    """Phase 4: Delete a schema and all its versions."""
+    from backend.services.schema_store import schema_store
+    deleted = schema_store.delete_schema(schema_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Schema {schema_id} not found.")
+    return {"status": "DELETED", "schema_id": schema_id}
+
+
+@app.post("/api/schemas/from-nl")
+def nl_to_schema_endpoint(req: NLToSchemaRequest):
+    """Phase 4: Convert a natural language description to an ExtractionSchema using Gemini."""
+    from backend.services.schema_intelligence_engine import schema_intelligence_engine
+    schema = schema_intelligence_engine.nl_to_schema(req.nl_text)
+    schema = schema_intelligence_engine.normalize_schema(schema)
+    return {
+        "status": "OK",
+        "schema": schema.model_dump(),
+        "field_count": len(schema.fields)
+    }
+
+
+@app.post("/api/schemas/from-json")
+def json_schema_import_endpoint(req: JSONSchemaImportRequest):
+    """Phase 4: Import a standard JSON Schema object into ExtractionSchema format."""
+    from backend.services.schema_intelligence_engine import schema_intelligence_engine
+    schema = schema_intelligence_engine.from_json_schema(req.json_schema)
+    if req.name:
+        schema = schema.model_copy(update={"name": req.name})
+    return {
+        "status": "OK",
+        "schema": schema.model_dump(),
+        "field_count": len(schema.fields)
+    }
+
+
+@app.post("/api/schemas/{schema_id}/analyze")
+async def analyze_schema_coverage_endpoint(schema_id: str, file: UploadFile = File(None), req: SchemaCoverageRequest = None):
+    """Phase 4: Analyze schema field coverage against a document (file upload or text)."""
+    from backend.services.schema_store import schema_store
+    from backend.services.schema_intelligence_engine import schema_intelligence_engine
+    from backend.services.file_parser import parse_file_content
+
+    schema = schema_store.get_schema(schema_id)
+    if not schema:
+        raise HTTPException(status_code=404, detail=f"Schema {schema_id} not found.")
+
+    document_text = ""
+    if file:
+        content = await file.read()
+        parsed = parse_file_content(content, file.filename or "doc", file.content_type or "")
+        document_text = parsed.get("text_content", "")
+    elif req:
+        document_text = req.document_text
+
+    analysis = schema_intelligence_engine.analyze_coverage(schema, document_text)
+    return analysis.model_dump()
+
+
+@app.get("/api/schemas/{schema_id}/versions")
+def get_schema_versions_endpoint(schema_id: str):
+    """Phase 4: Return version history for a schema."""
+    from backend.services.schema_store import schema_store
+    schema = schema_store.get_schema(schema_id)
+    if not schema:
+        raise HTTPException(status_code=404, detail=f"Schema {schema_id} not found.")
+    return {
+        "schema_id": schema_id,
+        "versions": schema_store.get_schema_versions(schema_id)
+    }
+
+
+@app.post("/api/schemas/{schema_id}/diff")
+def schema_diff_endpoint(schema_id: str, req: SchemaDiffRequest):
+    """Phase 4: Compute diff between two version snapshots of a schema."""
+    from backend.services.schema_store import schema_store
+    from backend.services.schema_intelligence_engine import schema_intelligence_engine
+
+    snap_a = schema_store.get_schema_version_snapshot(schema_id, req.version_id_a)
+    snap_b = schema_store.get_schema_version_snapshot(schema_id, req.version_id_b)
+
+    if not snap_a:
+        raise HTTPException(status_code=404, detail=f"Version {req.version_id_a} not found.")
+    if not snap_b:
+        raise HTTPException(status_code=404, detail=f"Version {req.version_id_b} not found.")
+
+    diff = schema_intelligence_engine.schema_diff(snap_a, snap_b)
+    return diff.model_dump()
+
+
+@app.get("/api/jobs/{job_id}/schema-validation")
+def get_job_schema_validation_endpoint(job_id: str):
+    """Phase 4: Returns the SchemaExtractionReport for a specific job."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    schema_validation = job.get("schemaValidation") or {}
+    return {
+        "jobId": job_id,
+        "userSchemaId": job.get("userSchemaId", ""),
+        "schemaValidation": schema_validation,
+        "hasCustomSchema": bool(job.get("userSchemaId"))
+    }
+
+
+@app.post("/api/schemas/{schema_id}/validate-document")
+async def validate_document_against_schema_endpoint(schema_id: str, file: UploadFile = File(...)):
+    """Phase 4: Extract and validate a document against a specific schema (test mode)."""
+    from backend.services.schema_store import schema_store
+    from backend.services.schema_extraction_engine import schema_extraction_engine
+    from backend.services.file_parser import parse_file_content
+
+    schema = schema_store.get_schema(schema_id)
+    if not schema:
+        raise HTTPException(status_code=404, detail=f"Schema {schema_id} not found.")
+
+    content = await file.read()
+    mime = file.content_type or "application/octet-stream"
+    filename = file.filename or "document"
+
+    parsed = parse_file_content(content, filename, mime)
+    text_content = parsed.get("text_content", "")
+
+    extracted, report = schema_extraction_engine.extract_with_schema(
+        schema=schema,
+        file_bytes=content,
+        mime_type=mime,
+        text_content=text_content
+    )
+
+    return {
+        "jobId": None,
+        "schemaId": schema_id,
+        "schemaName": schema.name,
+        "extractedFields": extracted,
+        "schemaValidation": report.model_dump()
+    }
 
 
 # =====================================================================

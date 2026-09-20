@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { UploadCloud, Sparkles, FileText, CheckCircle2, Loader2, Image, FileSpreadsheet, FileCode, Archive, AlertCircle, ArrowRight, Bot } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { UploadCloud, Sparkles, FileText, CheckCircle2, Loader2, Image, FileSpreadsheet, FileCode, Archive, AlertCircle, ArrowRight, Bot, Brain, ChevronDown } from 'lucide-react';
 import { getApiUrl } from '../config/api';
 
 interface UploadProps {
@@ -17,7 +17,20 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onJobCreated }) => {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Phase 4: Schema picker
+  const [useCustomSchema, setUseCustomSchema] = useState(false);
+  const [savedSchemas, setSavedSchemas] = useState<any[]>([]);
+  const [selectedSchemaId, setSelectedSchemaId] = useState('');
+
   const isImage = (file: File) => file.type.startsWith('image/');
+
+  // Phase 4: Load saved schemas for picker
+  useEffect(() => {
+    fetch(getApiUrl('/api/schemas'))
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setSavedSchemas(d))
+      .catch(() => {});
+  }, []);
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -60,6 +73,10 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onJobCreated }) => {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
+      // Phase 4: attach schema_id if user selected a custom schema
+      if (useCustomSchema && selectedSchemaId) {
+        formData.append('schema_id', selectedSchemaId);
+      }
       const res = await fetch(getApiUrl('/api/jobs'), { method: 'POST', body: formData, signal: controller.signal });
       clearTimeout(timeoutId);
 
@@ -201,6 +218,49 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onJobCreated }) => {
             )}
           </div>
 
+          {/* Phase 4: Custom Schema Picker */}
+          <div style={{ marginTop: '1.25rem', padding: '0.85rem 1.1rem', background: '#F8FAFF', border: '1px solid #E0E7FF', borderRadius: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Brain size={15} color="#4F46E5" />
+                <span style={{ fontWeight: 700, fontSize: 13, color: '#3730A3' }}>Use Custom Schema</span>
+                <span style={{ fontSize: 11, color: '#64748B' }}>Extract only your defined fields</span>
+              </div>
+              <div onClick={() => setUseCustomSchema(v => !v)} style={{
+                width: 38, height: 22, borderRadius: 999, cursor: 'pointer', transition: 'all 0.2s',
+                background: useCustomSchema ? '#4F46E5' : '#CBD5E1', position: 'relative'
+              }}>
+                <div style={{
+                  width: 16, height: 16, borderRadius: '50%', background: 'white',
+                  position: 'absolute', top: 3, left: useCustomSchema ? 19 : 3, transition: 'all 0.2s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                }} />
+              </div>
+            </div>
+            {useCustomSchema && (
+              <div style={{ marginTop: 10 }}>
+                {savedSchemas.length > 0 ? (
+                  <select value={selectedSchemaId} onChange={e => setSelectedSchemaId(e.target.value)}
+                    style={{
+                      width: '100%', borderRadius: 8, border: '1px solid #C7D2FE', padding: '0.5rem 0.75rem',
+                      fontSize: 13, background: 'white', color: '#0F172A', outline: 'none'
+                    }}>
+                    <option value="">-- Select a saved schema --</option>
+                    {savedSchemas.map((s: any) => (
+                      <option key={s.schema_id} value={s.schema_id}>
+                        {s.name} (v{s.version}) · {s.domain}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div style={{ fontSize: 12, color: '#94A3B8', padding: '0.5rem', textAlign: 'center' }}>
+                    No saved schemas found. Go to the <strong>Schema Builder</strong> to create one.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Action Bar */}
           <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
             <button
@@ -220,7 +280,7 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onJobCreated }) => {
               ) : (
                 <>
                   <Sparkles size={16} />
-                  <span>Start Agentic AI Extraction</span>
+                  <span>{useCustomSchema && selectedSchemaId ? 'Extract with Custom Schema' : 'Start Agentic AI Extraction'}</span>
                 </>
               )}
             </button>

@@ -2,9 +2,12 @@
 Phase 2: Agentic Planner Agent
 Receives InputAnalysis and constructs an executable ExtractionPlan specifying agent selection,
 processing strategy, validation rules, retry policies, and human review thresholds.
+
+Phase 4 extension: accepts optional ExtractionSchema for user-defined schema-constrained extraction.
 """
 import uuid
 import time
+from typing import Optional
 from backend.agents.agentic_models import (
     InputAnalysis, ExtractionPlan, ProcessingStrategy,
     ValidationStrategy, RetryPolicy, HumanReviewPolicy
@@ -13,7 +16,12 @@ from backend.agents.capability_registry import capability_registry
 from backend.agents.entity_prompts import DOMAIN_PRESETS
 
 class PlannerAgent:
-    def create_plan(self, analysis: InputAnalysis, user_preset: str = "") -> ExtractionPlan:
+    def create_plan(
+        self,
+        analysis: InputAnalysis,
+        user_preset: str = "",
+        user_schema=None  # Optional[ExtractionSchema] — avoids circular import
+    ) -> ExtractionPlan:
         plan_id = f"plan-{uuid.uuid4().hex[:8]}"
         created_at = time.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -21,7 +29,11 @@ class PlannerAgent:
         schema_strategy = "dynamic"
         target_category = "General Document"
 
-        if user_preset and user_preset in DOMAIN_PRESETS:
+        # Phase 4: user-defined schema takes highest priority
+        if user_schema is not None:
+            schema_strategy = "user_defined"
+            target_category = getattr(user_schema, "name", "Custom Schema")
+        elif user_preset and user_preset in DOMAIN_PRESETS:
             schema_strategy = "preset"
             target_category = DOMAIN_PRESETS[user_preset]["category"]
         elif analysis.document_type == "invoice":
@@ -43,7 +55,11 @@ class PlannerAgent:
         if analysis.input_type == "pdf":
             selected_agents.extend(["pdf_intelligence_agent", "pdf_aggregator_engine"])
 
-        selected_agents.append("schema_generator")
+        # Phase 4: if user_schema provided, use schema_extraction_engine instead of dynamic schema_generator
+        if user_schema is not None:
+            selected_agents.append("schema_extraction_engine")
+        else:
+            selected_agents.append("schema_generator")
 
         if analysis.requires_ocr:
             selected_agents.append("ocr_agent")
@@ -110,9 +126,16 @@ class PlannerAgent:
             threshold=0.70
         )
 
+        # Build input classification dict; inject schema metadata if user_schema present
+        input_class = analysis.dict()
+        if user_schema is not None:
+            input_class["user_schema_id"] = getattr(user_schema, "schema_id", None)
+            input_class["user_schema_name"] = getattr(user_schema, "name", None)
+            input_class["user_schema_field_count"] = len(getattr(user_schema, "fields", []))
+
         return ExtractionPlan(
             plan_id=plan_id,
-            input_classification=analysis.dict(),
+            input_classification=input_class,
             schema_strategy=schema_strategy,
             target_category=target_category,
             agents=selected_agents,

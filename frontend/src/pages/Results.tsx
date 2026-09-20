@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { UniversalDocumentDataset } from '../types';
-import { Search, Download, RefreshCw, CheckCircle2, FileSpreadsheet, Database, Edit3, X, Save, ExternalLink, Check, AlertCircle } from 'lucide-react';
+import { Search, Download, RefreshCw, CheckCircle2, FileSpreadsheet, Database, Edit3, X, Save, ExternalLink, Check, AlertCircle, Brain, Shield, XCircle, CheckCircle } from 'lucide-react';
 import { getApiUrl } from '../config/api';
 
 interface ResultsProps {
@@ -83,7 +83,73 @@ export const Results: React.FC<ResultsProps> = ({
 
   return (
     <div style={{ padding: '2rem', maxWidth: 1400, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header Bar */}
+
+      {/* Phase 4: Schema Validation Panel — shown when job has schemaValidation data */}
+      {activeJob?.schemaValidation && Object.keys(activeJob.schemaValidation).length > 0 && (
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 14, padding: '1.25rem', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#4F46E5,#7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Brain size={18} color="white" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 14, color: '#0F172A' }}>Schema Validation Report <span style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8', marginLeft: 6 }}>Phase 4</span></div>
+              <div style={{ fontSize: 12, color: '#64748B' }}>{activeJob.schemaValidation.schema_name || 'Custom Schema'} · v{activeJob.schemaValidation.schema_version || '1.0.0'}</div>
+            </div>
+            {activeJob.schemaValidation.hitl_required ? (
+              <span style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: 999, background: '#FEF3C7', color: '#D97706', fontSize: 11, fontWeight: 700, border: '1px solid #FDE68A' }}>HITL Required</span>
+            ) : (
+              <span style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: 999, background: '#ECFDF5', color: '#10B981', fontSize: 11, fontWeight: 700, border: '1px solid #A7F3D0' }}>Auto-Complete</span>
+            )}
+          </div>
+
+          {/* KPI Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+            {[
+              { label: 'COMPLETENESS', value: `${activeJob.schemaValidation.completeness_pct ?? 0}%`, color: '#4F46E5' },
+              { label: 'QUALITY SCORE', value: `${((activeJob.schemaValidation.quality_score ?? 0) * 100).toFixed(1)}%`, color: '#7C3AED' },
+              { label: 'MISSING REQUIRED', value: activeJob.schemaValidation.missing_required?.length ?? 0, color: activeJob.schemaValidation.missing_required?.length ? '#EF4444' : '#10B981' },
+              { label: 'RULES FAILED', value: activeJob.schemaValidation.cross_field_rules_failed ?? 0, color: activeJob.schemaValidation.cross_field_rules_failed ? '#D97706' : '#10B981' },
+            ].map(kpi => (
+              <div key={kpi.label} style={{ background: '#F8FAFC', borderRadius: 10, padding: '0.75rem', textAlign: 'center' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.06em' }}>{kpi.label}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: kpi.color, marginTop: 4 }}>{String(kpi.value)}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* HITL Reasons */}
+          {activeJob.schemaValidation.hitl_reasons?.length > 0 && (
+            <div style={{ marginBottom: 12, padding: '0.6rem 0.85rem', background: '#FEF3C7', borderRadius: 8, border: '1px solid #FDE68A' }}>
+              {activeJob.schemaValidation.hitl_reasons.map((r: string, i: number) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#92400E' }}>
+                  <AlertCircle size={12} />{r}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Field Outcomes Table */}
+          {activeJob.schemaValidation.field_outcomes?.length > 0 && (
+            <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #F1F5F9', borderRadius: 8 }}>
+              {activeJob.schemaValidation.field_outcomes.map((fo: any, i: number) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px',
+                  borderBottom: i < activeJob.schemaValidation.field_outcomes.length - 1 ? '1px solid #F1F5F9' : 'none',
+                  background: fo.passed ? 'transparent' : '#FFF8F8'
+                }}>
+                  {fo.passed ? <CheckCircle size={13} color="#10B981" /> : <XCircle size={13} color="#EF4444" />}
+                  <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#475569', minWidth: 140 }}>{fo.field_key}</span>
+                  {fo.value !== null && fo.value !== undefined && (
+                    <span style={{ fontSize: 12, color: '#0F172A', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(fo.value)}</span>
+                  )}
+                  {fo.error && <span style={{ fontSize: 11, color: '#EF4444', marginLeft: 'auto', flexShrink: 0 }}>{fo.error}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
