@@ -105,7 +105,7 @@ class SchemaExtractionEngine:
         # Build report
         required_keys = {f.key for f in schema.required_fields}
         extracted_required = {k for k in required_keys if extracted.get(k) not in (None, "", "null")}
-        completeness = len(extracted_required) / max(len(required_keys), 1) * 100
+        completeness = (len(extracted_required) / len(required_keys) * 100) if required_keys else 100.0
         rules_passed = sum(1 for r in rule_outcomes if r.passed)
         rules_failed = sum(1 for r in rule_outcomes if not r.passed)
 
@@ -419,16 +419,26 @@ class SchemaExtractionEngine:
     # ------------------------------------------------------------------
     def evaluate_cross_field_rules(
         self,
-        extracted: Dict[str, Any],
-        schema: ExtractionSchema
+        arg1: Any,
+        arg2: Any
     ) -> List[CrossFieldRuleOutcome]:
         """
         Evaluate arithmetic and logical cross-field rules in a sandboxed manner.
-        Uses Python eval with a restricted namespace.
+        Supports both (extracted, schema) and (rules/schema, extracted).
         """
-        outcomes: List[CrossFieldRuleOutcome] = []
+        if isinstance(arg1, dict):
+            extracted = arg1
+            rules = arg2.cross_field_rules if hasattr(arg2, "cross_field_rules") else arg2
+        else:
+            extracted = arg2
+            rules = arg1.cross_field_rules if hasattr(arg1, "cross_field_rules") else arg1
 
-        for rule in schema.cross_field_rules:
+        if not isinstance(rules, list):
+            rules = []
+
+        outcomes: List[CrossFieldRuleOutcome] = []
+        for rule in rules:
+            rule_obj = rule if isinstance(rule, CrossFieldRule) else CrossFieldRule(**rule)
             # Build safe evaluation context with numeric field values
             safe_ctx: Dict[str, Any] = {}
             for key, val in extracted.items():
@@ -443,26 +453,28 @@ class SchemaExtractionEngine:
 
             try:
                 # Restricted eval: only math operations, no builtins
-                result = eval(rule.formula, {"__builtins__": {}}, safe_ctx)  # noqa: S307
+                result = eval(rule_obj.formula, {"__builtins__": {}}, safe_ctx)  # noqa: S307
                 passed = bool(result)
                 outcomes.append(CrossFieldRuleOutcome(
-                    rule_id=rule.rule_id,
-                    formula=rule.formula,
+                    rule_id=rule_obj.rule_id,
+                    formula=rule_obj.formula,
                     passed=passed,
-                    error=None if passed else (rule.error_message or f"Rule failed: {rule.formula}"),
-                    severity=rule.severity
+                    error=None if passed else (rule_obj.error_message or f"Rule failed: {rule_obj.formula}"),
+                    severity=rule_obj.severity
                 ))
             except Exception as e:
                 # If eval fails (e.g., None operand), treat as warning not error
                 outcomes.append(CrossFieldRuleOutcome(
-                    rule_id=rule.rule_id,
-                    formula=rule.formula,
+                    rule_id=rule_obj.rule_id,
+                    formula=rule_obj.formula,
                     passed=True,  # Can't evaluate = skip (not hard fail)
-                    error=f"Rule skipped (eval error): {str(e)[:100]}",
-                    severity=RuleSeverity.INFO
+                    error=f"Rule evaluation skipped: {e}",
+                    severity=RuleSeverity.WARNING
                 ))
 
         return outcomes
+
+    _evaluate_cross_field_rules = evaluate_cross_field_rules
 
     # ------------------------------------------------------------------
     # Schema-to-document mapping

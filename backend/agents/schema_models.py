@@ -161,6 +161,12 @@ class CrossFieldRuleOutcome(BaseModel):
     error: Optional[str] = None
     severity: RuleSeverity = RuleSeverity.WARNING
 
+    def __getitem__(self, item: str) -> Any:
+        return getattr(self, item)
+
+    def get(self, item: str, default: Any = None) -> Any:
+        return getattr(self, item, default)
+
 class SchemaValidationResult(BaseModel):
     schema_id: str
     schema_name: str
