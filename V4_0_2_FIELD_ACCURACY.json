@@ -1,15 +1,15 @@
 {
   "mode": "baseline",
-  "total_documents": 30,
-  "total_fields": 118,
-  "correct_fields": 113,
+  "total_documents": 50,
+  "total_fields": 200,
+  "correct_fields": 195,
   "incorrect_fields": 4,
   "missing_fields": 1,
   "hallucinated_fields": 12,
-  "overall_field_accuracy_pct": 95.76,
-  "independent_accuracy_pct": 95.69,
-  "hitl_rate_pct": 6.67,
-  "average_latency_sec": 4.7,
+  "overall_field_accuracy_pct": 97.5,
+  "independent_accuracy_pct": 97.47,
+  "hitl_rate_pct": 4.0,
+  "average_latency_sec": 6.13,
   "confidence_analysis": {
     "0-50%": {
       "total": 0,
@@ -24,26 +24,26 @@
       "correct": 12
     },
     "80-90%": {
-      "total": 0,
-      "correct": 0
+      "total": 4,
+      "correct": 4
     },
     "90-95%": {
-      "total": 80,
-      "correct": 75
+      "total": 146,
+      "correct": 141
     },
     "95-100%": {
-      "total": 26,
-      "correct": 26
+      "total": 38,
+      "correct": 38
     }
   },
   "class_breakdown": {
     "A": {
-      "total": 14,
-      "correct": 9
+      "total": 54,
+      "correct": 49
     },
     "B": {
-      "total": 102,
-      "correct": 102
+      "total": 144,
+      "correct": 144
     },
     "C": {
       "total": 2,

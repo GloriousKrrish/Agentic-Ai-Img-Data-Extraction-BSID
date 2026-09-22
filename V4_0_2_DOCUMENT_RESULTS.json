@@ -41,7 +41,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.12,
+    "latency_sec": 4.17,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -88,7 +88,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.1,
+    "latency_sec": 5.15,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -130,7 +130,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.08,
+    "latency_sec": 5.15,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 5
@@ -177,7 +177,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 16.15,
+    "latency_sec": 6.29,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -219,7 +219,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 4.07,
+    "latency_sec": 4.17,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 5
@@ -271,7 +271,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 4.75,
+    "latency_sec": 4.13,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 7
@@ -318,7 +318,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 4.08,
+    "latency_sec": 4.17,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 6
@@ -365,7 +365,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 6.11,
+    "latency_sec": 5.16,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -392,7 +392,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.15,
+    "latency_sec": 3.09,
     "status": "Completed",
     "confidence": 95.0,
     "evidence_count": 2
@@ -439,7 +439,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 3.13,
+    "latency_sec": 3.28,
     "status": "Completed",
     "confidence": 96.0,
     "evidence_count": 6
@@ -501,7 +501,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 6.15,
+    "latency_sec": 4.15,
     "status": "WaitingForReview",
     "confidence": 73.0,
     "evidence_count": 9
@@ -568,7 +568,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 5.11,
+    "latency_sec": 4.15,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 9
@@ -605,7 +605,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.12,
+    "latency_sec": 4.17,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 4
@@ -637,7 +637,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.12,
+    "latency_sec": 4.14,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 3
@@ -674,7 +674,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 3.14,
+    "latency_sec": 3.15,
     "status": "Completed",
     "confidence": 96.0,
     "evidence_count": 4
@@ -706,7 +706,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 9.17,
+    "latency_sec": 3.12,
     "status": "Completed",
     "confidence": 97.0,
     "evidence_count": 3
@@ -743,7 +743,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.12,
+    "latency_sec": 4.12,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 4
@@ -780,7 +780,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.1,
+    "latency_sec": 4.21,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 4
@@ -812,7 +812,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 3.15,
+    "latency_sec": 3.08,
     "status": "Completed",
     "confidence": 97.0,
     "evidence_count": 3
@@ -844,7 +844,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 3.08,
+    "latency_sec": 4.15,
     "status": "Completed",
     "confidence": 95.0,
     "evidence_count": 3
@@ -871,7 +871,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 3.1,
+    "latency_sec": 3.08,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 2
@@ -908,7 +908,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 4.06,
+    "latency_sec": 10.2,
     "status": "WaitingForReview",
     "confidence": 74.0,
     "evidence_count": 4
@@ -940,7 +940,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 4.09,
+    "latency_sec": 3.11,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 3
@@ -972,7 +972,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.08,
+    "latency_sec": 3.12,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 3
@@ -999,7 +999,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.14,
+    "latency_sec": 2.14,
     "status": "Completed",
     "confidence": 98.0,
     "evidence_count": 2
@@ -1031,7 +1031,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.14,
+    "latency_sec": 4.12,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 3
@@ -1063,7 +1063,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.11,
+    "latency_sec": 5.15,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 3
@@ -1095,7 +1095,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 3.12,
+    "latency_sec": 3.17,
     "status": "Completed",
     "confidence": 97.0,
     "evidence_count": 3
@@ -1127,7 +1127,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 3.2,
+    "latency_sec": 3.14,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 3
@@ -1154,9 +1154,759 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.07,
+    "latency_sec": 4.13,
     "status": "Completed",
     "confidence": 90.0,
     "evidence_count": 2
+  },
+  {
+    "document_id": "DOC-031",
+    "filename": "31_Real_Hospital_Statement.png",
+    "source_class": "INDEPENDENT_REAL_REFERENCE",
+    "total_gt_fields": 6,
+    "correct": 6,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "HOSP-9901",
+        "actual": "HOSP-9901",
+        "status": "CORRECT"
+      },
+      "invoiceDate": {
+        "expected": "2026-08-12",
+        "actual": "2026-08-12",
+        "status": "CORRECT"
+      },
+      "patientName": {
+        "expected": "Evelyn Reed",
+        "actual": "Evelyn Reed",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "3200.00",
+        "actual": "3200.00",
+        "status": "CORRECT"
+      },
+      "taxAmount": {
+        "expected": "0.00",
+        "actual": "0.00",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "3200.00",
+        "actual": "3200.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 9.18,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": "DOC-032",
+    "filename": "32_Real_Hotel_Folio.png",
+    "source_class": "INDEPENDENT_REAL_REFERENCE",
+    "total_gt_fields": 6,
+    "correct": 6,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "folioNumber": {
+        "expected": "FOL-55021",
+        "actual": "FOL-55021",
+        "status": "CORRECT"
+      },
+      "checkOutDate": {
+        "expected": "2026-09-01",
+        "actual": "2026-09-01",
+        "status": "CORRECT"
+      },
+      "guestName": {
+        "expected": "Robert Vance",
+        "actual": "Robert Vance",
+        "status": "CORRECT"
+      },
+      "roomRateTotal": {
+        "expected": "850.00",
+        "actual": "850.00",
+        "status": "CORRECT"
+      },
+      "resortFee": {
+        "expected": "75.00",
+        "actual": "75.00",
+        "status": "CORRECT"
+      },
+      "totalDue": {
+        "expected": "925.00",
+        "actual": "925.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 23.35,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": "DOC-033",
+    "filename": "33_Real_Utility_Tax_Notice.png",
+    "source_class": "INDEPENDENT_REAL_REFERENCE",
+    "total_gt_fields": 4,
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "noticeNumber": {
+        "expected": "TAX-4402",
+        "actual": "TAX-4402",
+        "status": "CORRECT"
+      },
+      "assessmentYear": {
+        "expected": "2026",
+        "actual": "2026",
+        "status": "CORRECT"
+      },
+      "taxpayerName": {
+        "expected": "Apex Technologies LLC",
+        "actual": "Apex Technologies LLC",
+        "status": "CORRECT"
+      },
+      "amountDue": {
+        "expected": "12500.00",
+        "actual": "12500.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 11.18,
+    "status": "Completed",
+    "confidence": 89.0,
+    "evidence_count": 4
+  },
+  {
+    "document_id": "DOC-034",
+    "filename": "34_Real_Corporate_PO.png",
+    "source_class": "INDEPENDENT_REAL_REFERENCE",
+    "total_gt_fields": 4,
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "poNumber": {
+        "expected": "PO-99102",
+        "actual": "PO-99102",
+        "status": "CORRECT"
+      },
+      "orderDate": {
+        "expected": "2026-09-10",
+        "actual": "2026-09-10",
+        "status": "CORRECT"
+      },
+      "vendorName": {
+        "expected": "Global Steel Industries",
+        "actual": "Global Steel Industries",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "18400.00",
+        "actual": "18400.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 8.16,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 4
+  },
+  {
+    "document_id": "DOC-035",
+    "filename": "35_Real_Shipping_Bill_Lading.png",
+    "source_class": "INDEPENDENT_REAL_REFERENCE",
+    "total_gt_fields": 4,
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "billOfLading": {
+        "expected": "BOL-77019",
+        "actual": "BOL-77019",
+        "status": "CORRECT"
+      },
+      "shipperName": {
+        "expected": "Maersk Ocean Freight",
+        "actual": "Maersk Ocean Freight",
+        "status": "CORRECT"
+      },
+      "consignee": {
+        "expected": "West Coast Logistics",
+        "actual": "West Coast Logistics",
+        "status": "CORRECT"
+      },
+      "freightCost": {
+        "expected": "4500.00",
+        "actual": "4500.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 9.21,
+    "status": "Completed",
+    "confidence": 91.0,
+    "evidence_count": 4
+  },
+  {
+    "document_id": "DOC-036",
+    "filename": "36_Real_Pharmacy_Rx_Bill.png",
+    "source_class": "INDEPENDENT_REAL_REFERENCE",
+    "total_gt_fields": 5,
+    "correct": 5,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "rxNumber": {
+        "expected": "RX-88102",
+        "actual": "RX-88102",
+        "status": "CORRECT"
+      },
+      "fillDate": {
+        "expected": "2026-09-14",
+        "actual": "2026-09-14",
+        "status": "CORRECT"
+      },
+      "patientName": {
+        "expected": "Michael Scott",
+        "actual": "Michael Scott",
+        "status": "CORRECT"
+      },
+      "copayAmount": {
+        "expected": "25.00",
+        "actual": "25.00",
+        "status": "CORRECT"
+      },
+      "totalPaid": {
+        "expected": "25.00",
+        "actual": "25.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 7.19,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 5
+  },
+  {
+    "document_id": "DOC-037",
+    "filename": "37_Real_Automotive_Repair_Invoice.png",
+    "source_class": "INDEPENDENT_REAL_REFERENCE",
+    "total_gt_fields": 6,
+    "correct": 6,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "INV-WO-440",
+        "actual": "INV-WO-440",
+        "status": "CORRECT"
+      },
+      "invoiceDate": {
+        "expected": "2026-09-15",
+        "actual": "2026-09-15",
+        "status": "CORRECT"
+      },
+      "customerName": {
+        "expected": "Pam Beesly",
+        "actual": "Pam Beesly",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "640.00",
+        "actual": "640.00",
+        "status": "CORRECT"
+      },
+      "taxAmount": {
+        "expected": "51.20",
+        "actual": "51.20",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "691.20",
+        "actual": "691.20",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 8.17,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": "DOC-038",
+    "filename": "38_Real_Telecom_Wireless_Bill.png",
+    "source_class": "INDEPENDENT_REAL_REFERENCE",
+    "total_gt_fields": 5,
+    "correct": 5,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "accountNumber": {
+        "expected": "ACC-99201",
+        "actual": "ACC-99201",
+        "status": "CORRECT"
+      },
+      "billDate": {
+        "expected": "2026-09-05",
+        "actual": "2026-09-05",
+        "status": "CORRECT"
+      },
+      "customerName": {
+        "expected": "Jim Halpert",
+        "actual": "Jim Halpert",
+        "status": "CORRECT"
+      },
+      "monthlyCharges": {
+        "expected": "180.00",
+        "actual": "180.00",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "180.00",
+        "actual": "180.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 7.22,
+    "status": "Completed",
+    "confidence": 92.0,
+    "evidence_count": 5
+  },
+  {
+    "document_id": "DOC-039",
+    "filename": "39_Cloud_Infrastructure_Monthly_Invoice.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 6,
+    "correct": 6,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "AWS-2026-09",
+        "actual": "AWS-2026-09",
+        "status": "CORRECT"
+      },
+      "invoiceDate": {
+        "expected": "2026-09-01",
+        "actual": "2026-09-01",
+        "status": "CORRECT"
+      },
+      "customerName": {
+        "expected": "CloudScale Inc",
+        "actual": "CloudScale Inc",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "4200.00",
+        "actual": "4200.00",
+        "status": "CORRECT"
+      },
+      "taxAmount": {
+        "expected": "336.00",
+        "actual": "336.00",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "4536.00",
+        "actual": "4536.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 7.18,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": "DOC-040",
+    "filename": "40_Restaurant_Catering_Receipt.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 6,
+    "correct": 6,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "receiptId": {
+        "expected": "CAT-8819",
+        "actual": "CAT-8819",
+        "status": "CORRECT"
+      },
+      "date": {
+        "expected": "2026-09-12",
+        "actual": "2026-09-12",
+        "status": "CORRECT"
+      },
+      "clientName": {
+        "expected": "Dunder Mifflin",
+        "actual": "Dunder Mifflin",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "890.00",
+        "actual": "890.00",
+        "status": "CORRECT"
+      },
+      "gratuity": {
+        "expected": "160.20",
+        "actual": "160.20",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "1050.20",
+        "actual": "1050.20",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 10.19,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": "DOC-041",
+    "filename": "41_Industrial_Steel_PO.csv",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "poNumber": {
+        "expected": "PO-STEEL-440",
+        "actual": "PO-STEEL-440",
+        "status": "CORRECT"
+      },
+      "vendorName": {
+        "expected": "Vance Refrigeration",
+        "actual": "Vance Refrigeration",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "7800.00",
+        "actual": "7800.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 5.17,
+    "status": "Completed",
+    "confidence": 97.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": "DOC-042",
+    "filename": "42_Gas_Electric_Utility_Statement.xlsx",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "accountNumber": {
+        "expected": "UTIL-33019",
+        "actual": "UTIL-33019",
+        "status": "CORRECT"
+      },
+      "customerName": {
+        "expected": "Dwight Schrute",
+        "actual": "Dwight Schrute",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "340.50",
+        "actual": "340.50",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 5.1,
+    "status": "Completed",
+    "confidence": 97.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": "DOC-043",
+    "filename": "43_Surgical_Clinic_Invoice.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 4,
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "SURG-7701",
+        "actual": "SURG-7701",
+        "status": "CORRECT"
+      },
+      "patientName": {
+        "expected": "Angela Martin",
+        "actual": "Angela Martin",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "5400.00",
+        "actual": "5400.00",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "5400.00",
+        "actual": "5400.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 14.25,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 4
+  },
+  {
+    "document_id": "DOC-044",
+    "filename": "44_Executive_Airport_Shuttle_Receipt.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 4,
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "receiptNumber": {
+        "expected": "SHUT-1102",
+        "actual": "SHUT-1102",
+        "status": "CORRECT"
+      },
+      "date": {
+        "expected": "2026-09-19",
+        "actual": "2026-09-19",
+        "status": "CORRECT"
+      },
+      "passengerName": {
+        "expected": "Kevin Malone",
+        "actual": "Kevin Malone",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "95.00",
+        "actual": "95.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 15.25,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 4
+  },
+  {
+    "document_id": "DOC-045",
+    "filename": "45_Heavy_Equipment_Lease_Manifest.csv",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "manifestNumber": {
+        "expected": "LEASE-9901",
+        "actual": "LEASE-9901",
+        "status": "CORRECT"
+      },
+      "lesseeName": {
+        "expected": "Scranton Construction",
+        "actual": "Scranton Construction",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "3100.00",
+        "actual": "3100.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 5.18,
+    "status": "Completed",
+    "confidence": 97.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": "DOC-046",
+    "filename": "46_Commercial_Property_Insurance_Bill.xlsx",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "policyNumber": {
+        "expected": "POL-88301",
+        "actual": "POL-88301",
+        "status": "CORRECT"
+      },
+      "insuredName": {
+        "expected": "Sabre Corp",
+        "actual": "Sabre Corp",
+        "status": "CORRECT"
+      },
+      "premiumAmount": {
+        "expected": "6200.00",
+        "actual": "6200.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 6.26,
+    "status": "Completed",
+    "confidence": 97.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": "DOC-047",
+    "filename": "47_Adversarial_Unusual_Currency_Format.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 2,
+    "correct": 2,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "ADV-CURR-01",
+        "actual": "ADV-CURR-01",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "1250.00",
+        "actual": "1250.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 7.19,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 2
+  },
+  {
+    "document_id": "DOC-048",
+    "filename": "48_Adversarial_Zero_Line_Items.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 2,
+    "correct": 2,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "ADV-ZERO-02",
+        "actual": "ADV-ZERO-02",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "0.00",
+        "actual": "0.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 8.18,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 2
+  },
+  {
+    "document_id": "DOC-049",
+    "filename": "49_Adversarial_Duplicate_Subtotals.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "ADV-DUP-03",
+        "actual": "ADV-DUP-03",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "500.00",
+        "actual": "500.00",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "500.00",
+        "actual": "500.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 7.17,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": "DOC-050",
+    "filename": "50_MultiPage_Cross_Table_Invoice.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "MULTI-5501",
+        "actual": "MULTI-5501",
+        "status": "CORRECT"
+      },
+      "invoiceDate": {
+        "expected": "2026-09-20",
+        "actual": "2026-09-20",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "8900.00",
+        "actual": "8900.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 7.14,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 3
   }
 ]
