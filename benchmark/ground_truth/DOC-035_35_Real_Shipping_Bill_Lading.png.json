@@ -1,0 +1,13 @@
+{
+  "document_id": "DOC-035",
+  "filename": "35_Real_Shipping_Bill_Lading.png",
+  "doc_type": "manifest",
+  "source_class": "INDEPENDENT_REAL_REFERENCE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "billOfLading": "BOL-77019",
+    "shipperName": "Maersk Ocean Freight",
+    "consignee": "West Coast Logistics",
+    "freightCost": "4500.00"
+  }
+}

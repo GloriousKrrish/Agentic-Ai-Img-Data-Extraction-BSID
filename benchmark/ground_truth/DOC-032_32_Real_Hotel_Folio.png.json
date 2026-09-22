@@ -1,0 +1,15 @@
+{
+  "document_id": "DOC-032",
+  "filename": "32_Real_Hotel_Folio.png",
+  "doc_type": "receipt",
+  "source_class": "INDEPENDENT_REAL_REFERENCE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "folioNumber": "FOL-55021",
+    "checkOutDate": "2026-09-01",
+    "guestName": "Robert Vance",
+    "roomRateTotal": "850.00",
+    "resortFee": "75.00",
+    "totalDue": "925.00"
+  }
+}

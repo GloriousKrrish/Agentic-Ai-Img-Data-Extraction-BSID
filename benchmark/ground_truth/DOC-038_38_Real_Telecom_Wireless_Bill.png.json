@@ -1,0 +1,14 @@
+{
+  "document_id": "DOC-038",
+  "filename": "38_Real_Telecom_Wireless_Bill.png",
+  "doc_type": "utility_bill",
+  "source_class": "INDEPENDENT_REAL_REFERENCE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "accountNumber": "ACC-99201",
+    "billDate": "2026-09-05",
+    "customerName": "Jim Halpert",
+    "monthlyCharges": "180.00",
+    "totalAmount": "180.00"
+  }
+}

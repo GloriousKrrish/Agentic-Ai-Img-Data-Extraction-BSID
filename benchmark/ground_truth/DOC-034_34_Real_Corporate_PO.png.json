@@ -1,0 +1,13 @@
+{
+  "document_id": "DOC-034",
+  "filename": "34_Real_Corporate_PO.png",
+  "doc_type": "purchase_order",
+  "source_class": "INDEPENDENT_REAL_REFERENCE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "poNumber": "PO-99102",
+    "orderDate": "2026-09-10",
+    "vendorName": "Global Steel Industries",
+    "totalAmount": "18400.00"
+  }
+}

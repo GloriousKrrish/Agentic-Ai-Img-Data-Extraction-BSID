@@ -1,0 +1,13 @@
+{
+  "document_id": "DOC-043",
+  "filename": "43_Surgical_Clinic_Invoice.png",
+  "doc_type": "medical_invoice",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "invoiceNumber": "SURG-7701",
+    "patientName": "Angela Martin",
+    "subtotal": "5400.00",
+    "totalAmount": "5400.00"
+  }
+}

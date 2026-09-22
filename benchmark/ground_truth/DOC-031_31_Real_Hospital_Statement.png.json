@@ -1,0 +1,15 @@
+{
+  "document_id": "DOC-031",
+  "filename": "31_Real_Hospital_Statement.png",
+  "doc_type": "medical_invoice",
+  "source_class": "INDEPENDENT_REAL_REFERENCE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "invoiceNumber": "HOSP-9901",
+    "invoiceDate": "2026-08-12",
+    "patientName": "Evelyn Reed",
+    "subtotal": "3200.00",
+    "taxAmount": "0.00",
+    "totalAmount": "3200.00"
+  }
+}

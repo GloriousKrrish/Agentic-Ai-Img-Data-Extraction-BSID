@@ -1,0 +1,15 @@
+{
+  "document_id": "DOC-040",
+  "filename": "40_Restaurant_Catering_Receipt.png",
+  "doc_type": "receipt",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "receiptId": "CAT-8819",
+    "date": "2026-09-12",
+    "clientName": "Dunder Mifflin",
+    "subtotal": "890.00",
+    "gratuity": "160.20",
+    "totalAmount": "1050.20"
+  }
+}

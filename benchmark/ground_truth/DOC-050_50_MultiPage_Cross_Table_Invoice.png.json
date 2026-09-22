@@ -1,0 +1,12 @@
+{
+  "document_id": "DOC-050",
+  "filename": "50_MultiPage_Cross_Table_Invoice.png",
+  "doc_type": "invoice",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "invoiceNumber": "MULTI-5501",
+    "invoiceDate": "2026-09-20",
+    "totalAmount": "8900.00"
+  }
+}

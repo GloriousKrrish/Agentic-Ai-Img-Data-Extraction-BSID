@@ -1,0 +1,12 @@
+{
+  "document_id": "DOC-046",
+  "filename": "46_Commercial_Property_Insurance_Bill.xlsx",
+  "doc_type": "tax_statement",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "policyNumber": "POL-88301",
+    "insuredName": "Sabre Corp",
+    "premiumAmount": "6200.00"
+  }
+}

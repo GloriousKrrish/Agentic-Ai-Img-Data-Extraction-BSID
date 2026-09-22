@@ -1,0 +1,15 @@
+{
+  "document_id": "DOC-039",
+  "filename": "39_Cloud_Infrastructure_Monthly_Invoice.png",
+  "doc_type": "invoice",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "invoiceNumber": "AWS-2026-09",
+    "invoiceDate": "2026-09-01",
+    "customerName": "CloudScale Inc",
+    "subtotal": "4200.00",
+    "taxAmount": "336.00",
+    "totalAmount": "4536.00"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "document_id": "DOC-041",
+  "filename": "41_Industrial_Steel_PO.csv",
+  "doc_type": "purchase_order",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "poNumber": "PO-STEEL-440",
+    "vendorName": "Vance Refrigeration",
+    "totalAmount": "7800.00"
+  }
+}

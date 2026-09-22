@@ -1,0 +1,14 @@
+{
+  "document_id": "DOC-036",
+  "filename": "36_Real_Pharmacy_Rx_Bill.png",
+  "doc_type": "receipt",
+  "source_class": "INDEPENDENT_REAL_REFERENCE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "rxNumber": "RX-88102",
+    "fillDate": "2026-09-14",
+    "patientName": "Michael Scott",
+    "copayAmount": "25.00",
+    "totalPaid": "25.00"
+  }
+}

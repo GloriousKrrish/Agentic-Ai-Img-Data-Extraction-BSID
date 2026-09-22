@@ -1,0 +1,13 @@
+{
+  "document_id": "DOC-033",
+  "filename": "33_Real_Utility_Tax_Notice.png",
+  "doc_type": "tax_statement",
+  "source_class": "INDEPENDENT_REAL_REFERENCE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "noticeNumber": "TAX-4402",
+    "assessmentYear": "2026",
+    "taxpayerName": "Apex Technologies LLC",
+    "amountDue": "12500.00"
+  }
+}

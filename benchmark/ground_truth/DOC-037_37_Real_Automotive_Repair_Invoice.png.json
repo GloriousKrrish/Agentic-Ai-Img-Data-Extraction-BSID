@@ -1,0 +1,15 @@
+{
+  "document_id": "DOC-037",
+  "filename": "37_Real_Automotive_Repair_Invoice.png",
+  "doc_type": "invoice",
+  "source_class": "INDEPENDENT_REAL_REFERENCE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "invoiceNumber": "INV-WO-440",
+    "invoiceDate": "2026-09-15",
+    "customerName": "Pam Beesly",
+    "subtotal": "640.00",
+    "taxAmount": "51.20",
+    "totalAmount": "691.20"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "document_id": "DOC-044",
+  "filename": "44_Executive_Airport_Shuttle_Receipt.png",
+  "doc_type": "receipt",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "receiptNumber": "SHUT-1102",
+    "date": "2026-09-19",
+    "passengerName": "Kevin Malone",
+    "totalAmount": "95.00"
+  }
+}

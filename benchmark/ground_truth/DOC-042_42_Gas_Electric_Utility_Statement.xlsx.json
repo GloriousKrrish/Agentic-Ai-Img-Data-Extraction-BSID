@@ -1,0 +1,12 @@
+{
+  "document_id": "DOC-042",
+  "filename": "42_Gas_Electric_Utility_Statement.xlsx",
+  "doc_type": "utility_bill",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "accountNumber": "UTIL-33019",
+    "customerName": "Dwight Schrute",
+    "totalAmount": "340.50"
+  }
+}

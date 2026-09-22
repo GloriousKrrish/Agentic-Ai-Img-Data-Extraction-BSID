@@ -1,0 +1,12 @@
+{
+  "document_id": "DOC-045",
+  "filename": "45_Heavy_Equipment_Lease_Manifest.csv",
+  "doc_type": "manifest",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "ground_truth_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "manifestNumber": "LEASE-9901",
+    "lesseeName": "Scranton Construction",
+    "totalAmount": "3100.00"
+  }
+}
