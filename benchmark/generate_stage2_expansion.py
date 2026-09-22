@@ -143,9 +143,10 @@ def generate_stage2_files():
         fn = spec["filename"]
         doc_id = spec["doc_id"]
 
-        # 1. Write GT JSON
+        # Write GT JSON with both doc_id and document_id for backwards compatibility
         gt_path = GT_DIR / f"{doc_id}_{fn}.json"
         gt_payload = {
+            "doc_id": doc_id,
             "document_id": doc_id,
             "filename": fn,
             "doc_type": spec["doc_type"],
@@ -156,7 +157,7 @@ def generate_stage2_files():
         with open(gt_path, "w", encoding="utf-8") as f:
             json.dump(gt_payload, f, indent=2)
 
-        # 2. Render Document File
+        # Render Document File
         ds_path = DS_DIR / fn
         header_info = {k: v for k, v in spec["fields"].items()}
         items = [("Standard Line Item 1", 100.00), ("Standard Line Item 2", 200.00)]
