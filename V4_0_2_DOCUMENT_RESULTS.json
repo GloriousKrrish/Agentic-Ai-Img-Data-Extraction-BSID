@@ -41,7 +41,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.14,
+    "latency_sec": 4.12,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -88,7 +88,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 7.16,
+    "latency_sec": 4.1,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -130,7 +130,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 8.16,
+    "latency_sec": 4.08,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 5
@@ -177,7 +177,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 5.12,
+    "latency_sec": 16.15,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -219,7 +219,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 5.13,
+    "latency_sec": 4.07,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 5
@@ -271,7 +271,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 6.15,
+    "latency_sec": 4.75,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 7
@@ -318,7 +318,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 9.57,
+    "latency_sec": 4.08,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 6
@@ -365,7 +365,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 7.57,
+    "latency_sec": 6.11,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -392,7 +392,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.37,
+    "latency_sec": 4.15,
     "status": "Completed",
     "confidence": 95.0,
     "evidence_count": 2
@@ -439,7 +439,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 14.45,
+    "latency_sec": 3.13,
     "status": "Completed",
     "confidence": 96.0,
     "evidence_count": 6
@@ -501,7 +501,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 27.16,
+    "latency_sec": 6.15,
     "status": "WaitingForReview",
     "confidence": 73.0,
     "evidence_count": 9
@@ -568,7 +568,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 8.29,
+    "latency_sec": 5.11,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 9
@@ -605,7 +605,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 6.19,
+    "latency_sec": 5.12,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 4
@@ -637,7 +637,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 8.23,
+    "latency_sec": 4.12,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 3
@@ -674,7 +674,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 6.3,
+    "latency_sec": 3.14,
     "status": "Completed",
     "confidence": 96.0,
     "evidence_count": 4
@@ -706,7 +706,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 6.33,
+    "latency_sec": 9.17,
     "status": "Completed",
     "confidence": 97.0,
     "evidence_count": 3
@@ -743,7 +743,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 9.41,
+    "latency_sec": 5.12,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 4
@@ -780,7 +780,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.2,
+    "latency_sec": 4.1,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 4
@@ -812,7 +812,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.25,
+    "latency_sec": 3.15,
     "status": "Completed",
     "confidence": 97.0,
     "evidence_count": 3
@@ -844,7 +844,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 6.27,
+    "latency_sec": 3.08,
     "status": "Completed",
     "confidence": 95.0,
     "evidence_count": 3
@@ -871,7 +871,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.28,
+    "latency_sec": 3.1,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 2
@@ -908,7 +908,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 9.31,
+    "latency_sec": 4.06,
     "status": "WaitingForReview",
     "confidence": 74.0,
     "evidence_count": 4
@@ -940,7 +940,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 13.9,
+    "latency_sec": 4.09,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 3
@@ -972,7 +972,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 7.34,
+    "latency_sec": 4.08,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 3
@@ -999,7 +999,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 6.37,
+    "latency_sec": 4.14,
     "status": "Completed",
     "confidence": 98.0,
     "evidence_count": 2
@@ -1031,7 +1031,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.33,
+    "latency_sec": 4.14,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 3
@@ -1063,7 +1063,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.19,
+    "latency_sec": 4.11,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 3
@@ -1095,7 +1095,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.24,
+    "latency_sec": 3.12,
     "status": "Completed",
     "confidence": 97.0,
     "evidence_count": 3
@@ -1127,7 +1127,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 7.35,
+    "latency_sec": 3.2,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 3
@@ -1154,7 +1154,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 5.26,
+    "latency_sec": 4.07,
     "status": "Completed",
     "confidence": 90.0,
     "evidence_count": 2

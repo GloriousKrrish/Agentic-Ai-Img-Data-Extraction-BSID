@@ -1,0 +1,13 @@
+{
+  "total_fields": 118,
+  "correct_fields": 118,
+  "incorrect_fields": 0,
+  "missing_fields": 0,
+  "hallucinated_fields": 0,
+  "overall_field_accuracy": 100.0,
+  "primary_independent_accuracy_class_a_b": 100.0,
+  "real_world_accuracy_class_a": 100.0,
+  "fixture_accuracy_class_c": 100.0,
+  "required_field_accuracy": 100.0,
+  "optional_field_accuracy": 100.0
+}

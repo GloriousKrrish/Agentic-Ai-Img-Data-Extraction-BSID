@@ -41,7 +41,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.13,
+    "latency_sec": 4.12,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -88,7 +88,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 8.13,
+    "latency_sec": 4.1,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -130,7 +130,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.13,
+    "latency_sec": 4.08,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 5
@@ -177,7 +177,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 7.23,
+    "latency_sec": 16.15,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -219,7 +219,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 4.15,
+    "latency_sec": 4.07,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 5
@@ -271,7 +271,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 4.12,
+    "latency_sec": 4.75,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 7
@@ -318,7 +318,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 4.12,
+    "latency_sec": 4.08,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 6
@@ -365,7 +365,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 7.16,
+    "latency_sec": 6.11,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 6
@@ -392,7 +392,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 3.12,
+    "latency_sec": 4.15,
     "status": "Completed",
     "confidence": 95.0,
     "evidence_count": 2
@@ -439,7 +439,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 4.16,
+    "latency_sec": 3.13,
     "status": "Completed",
     "confidence": 96.0,
     "evidence_count": 6
@@ -501,7 +501,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 6.16,
+    "latency_sec": 6.15,
     "status": "WaitingForReview",
     "confidence": 73.0,
     "evidence_count": 9
@@ -512,9 +512,9 @@
     "source_class": "INDEPENDENT_REAL_REFERENCE",
     "total_gt_fields": 5,
     "correct": 0,
-    "incorrect": 3,
-    "missing": 2,
-    "hallucinated": 6,
+    "incorrect": 4,
+    "missing": 1,
+    "hallucinated": 5,
     "field_accuracy_pct": 0.0,
     "field_details": {
       "invoiceNumber": {
@@ -534,8 +534,8 @@
       },
       "subTotal": {
         "expected": "745.00",
-        "actual": null,
-        "status": "MISSING"
+        "actual": "145.00",
+        "status": "INCORRECT"
       },
       "totalAmount": {
         "expected": "1902.05",
@@ -557,11 +557,6 @@
         "actual": "John Smith, 3787 Pineview Drive, Cambridge, MA 12210",
         "status": "HALLUCINATED"
       },
-      "subtotal": {
-        "expected": null,
-        "actual": "145.00",
-        "status": "HALLUCINATED"
-      },
       "taxAmount": {
         "expected": null,
         "actual": "9.06",
@@ -573,7 +568,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 5.14,
+    "latency_sec": 5.11,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 9
@@ -610,7 +605,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 8.18,
+    "latency_sec": 5.12,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 4
@@ -642,7 +637,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 9.16,
+    "latency_sec": 4.12,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 3
@@ -679,7 +674,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 9.24,
+    "latency_sec": 3.14,
     "status": "Completed",
     "confidence": 96.0,
     "evidence_count": 4
@@ -711,7 +706,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 8.21,
+    "latency_sec": 9.17,
     "status": "Completed",
     "confidence": 97.0,
     "evidence_count": 3
@@ -748,7 +743,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 9.44,
+    "latency_sec": 5.12,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 4
@@ -785,7 +780,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 9.2,
+    "latency_sec": 4.1,
     "status": "Completed",
     "confidence": 91.0,
     "evidence_count": 4
@@ -817,7 +812,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 13.3,
+    "latency_sec": 3.15,
     "status": "Completed",
     "confidence": 97.0,
     "evidence_count": 3
@@ -849,7 +844,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 7.32,
+    "latency_sec": 3.08,
     "status": "Completed",
     "confidence": 95.0,
     "evidence_count": 3
@@ -876,7 +871,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 12.23,
+    "latency_sec": 3.1,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 2
@@ -913,7 +908,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 22.43,
+    "latency_sec": 4.06,
     "status": "WaitingForReview",
     "confidence": 74.0,
     "evidence_count": 4
@@ -945,7 +940,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 12.22,
+    "latency_sec": 4.09,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 3
@@ -977,7 +972,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 8.12,
+    "latency_sec": 4.08,
     "status": "Completed",
     "confidence": 93.0,
     "evidence_count": 3
@@ -1004,7 +999,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 6.19,
+    "latency_sec": 4.14,
     "status": "Completed",
     "confidence": 98.0,
     "evidence_count": 2
@@ -1036,7 +1031,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 9.19,
+    "latency_sec": 4.14,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 3
@@ -1068,7 +1063,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 9.19,
+    "latency_sec": 4.11,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 3
@@ -1100,7 +1095,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 7.19,
+    "latency_sec": 3.12,
     "status": "Completed",
     "confidence": 97.0,
     "evidence_count": 3
@@ -1132,7 +1127,7 @@
         "status": "HALLUCINATED"
       }
     },
-    "latency_sec": 9.16,
+    "latency_sec": 3.2,
     "status": "Completed",
     "confidence": 92.0,
     "evidence_count": 3
@@ -1159,7 +1154,7 @@
         "status": "CORRECT"
       }
     },
-    "latency_sec": 8.16,
+    "latency_sec": 4.07,
     "status": "Completed",
     "confidence": 90.0,
     "evidence_count": 2

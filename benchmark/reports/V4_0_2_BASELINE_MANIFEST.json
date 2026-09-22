@@ -1,0 +1,19 @@
+{
+  "benchmark_id": "v4.0.2-baseline-001",
+  "version": "v4.0.2",
+  "timestamp": "2026-09-22T09:07:05Z",
+  "git_commit_hash": "c53328d",
+  "branch": "main",
+  "python_version": "3.14.4",
+  "backend_version": "4.2.0",
+  "model_provider": "Google Gemini Vision API",
+  "dataset_manifest_hash": "a8f92b7c4d1e",
+  "ground_truth_manifest_hash": "e3b0c44298fc",
+  "total_documents": 30,
+  "provenance_breakdown": {
+    "class_a_real_reference": 2,
+    "class_b_annotated_fixture": 27,
+    "class_c_project_fixture": 1
+  },
+  "status": "FROZEN_BASELINE_CAPTURED"
+}

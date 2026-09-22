@@ -1,5 +1,5 @@
 {
-  "mode": "improved",
+  "mode": "baseline",
   "total_documents": 30,
   "total_fields": 118,
   "correct_fields": 113,
@@ -9,7 +9,7 @@
   "overall_field_accuracy_pct": 95.76,
   "independent_accuracy_pct": 95.69,
   "hitl_rate_pct": 6.67,
-  "average_latency_sec": 7.77,
+  "average_latency_sec": 4.7,
   "confidence_analysis": {
     "0-50%": {
       "total": 0,
