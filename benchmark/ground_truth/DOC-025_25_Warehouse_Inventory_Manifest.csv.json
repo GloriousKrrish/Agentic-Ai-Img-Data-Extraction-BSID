@@ -1,0 +1,11 @@
+{
+  "doc_id": "DOC-025",
+  "filename": "25_Warehouse_Inventory_Manifest.csv",
+  "doc_type": "manifest",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "warehouseId": "WH-NORTH-2",
+    "totalPallets": "48"
+  }
+}

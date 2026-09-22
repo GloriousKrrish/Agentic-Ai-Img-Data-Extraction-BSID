@@ -1,0 +1,12 @@
+{
+  "doc_id": "DOC-014",
+  "filename": "14_Coffee_Shop_Receipt.png",
+  "doc_type": "receipt",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "shopName": "Bean & Brew Coffee",
+    "date": "2026-09-21",
+    "totalAmount": "18.75"
+  }
+}

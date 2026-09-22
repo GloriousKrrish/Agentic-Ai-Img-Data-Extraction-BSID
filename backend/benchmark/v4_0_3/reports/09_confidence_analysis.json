@@ -1,0 +1,20 @@
+{
+  "calibration_status": "CALIBRATION NOT YET ESTABLISHED",
+  "buckets": {
+    "70-80%": {
+      "total": 12,
+      "correct": 12,
+      "accuracy": 100.0
+    },
+    "90-95%": {
+      "total": 80,
+      "correct": 80,
+      "accuracy": 100.0
+    },
+    "95-100%": {
+      "total": 26,
+      "correct": 26,
+      "accuracy": 100.0
+    }
+  }
+}

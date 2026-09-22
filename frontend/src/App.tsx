@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 
@@ -46,19 +46,13 @@ export const App: React.FC = () => {
     localStorage.setItem('current_active_job_id', jobId);
   };
 
-  const fetchJobState = async () => {
+  const fetchJobState = useCallback(async () => {
     try {
       // 1. Fetch All User Jobs
       const resJobs = await fetch(getApiUrl('/api/jobs'));
       if (resJobs.ok) {
         const jobsList = await resJobs.json();
         setAllJobs(jobsList);
-
-        if (!currentJobId && jobsList.length > 0) {
-          const latestId = jobsList[0].job_id;
-          setCurrentJobId(latestId);
-          localStorage.setItem('current_active_job_id', latestId);
-        }
       }
 
       // 2. Fetch Active Job Details if ID is present
@@ -89,42 +83,59 @@ export const App: React.FC = () => {
         if (data.queue && data.queue.workers) setWorkers(data.queue.workers);
       }
     } catch (e) {}
-  };
+  }, [currentJobId]);
 
+  // Setup WebSocket connection on mount
+  useEffect(() => {
+    const wsUrl = getWsUrl();
+    let socket: WebSocket;
+    let reconnectTimeout: any;
+
+    const connectWs = () => {
+      try {
+        socket = new WebSocket(wsUrl);
+        socket.onopen = () => setWsConnected(true);
+        socket.onclose = () => {
+          setWsConnected(false);
+          reconnectTimeout = setTimeout(connectWs, 3000);
+        };
+        socket.onerror = () => setWsConnected(false);
+        socket.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            if (payload.type === 'SYNC_UPDATE') {
+              if (payload.kpis) setKpis(payload.kpis);
+              if (payload.queue && payload.queue.workers) setWorkers(payload.queue.workers);
+            }
+          } catch (err) {}
+        };
+      } catch (err) {
+        setWsConnected(false);
+      }
+    };
+
+    connectWs();
+
+    return () => {
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (socket) socket.close();
+    };
+  }, []);
+
+  // Poll state only when job is actively processing
   useEffect(() => {
     fetchJobState();
 
-    // 1000ms polling loop for state recovery & live progress synchronization
-    const interval = setInterval(fetchJobState, 1000);
-
-    // Setup WebSocket
-    const wsUrl = getWsUrl();
-    let socket: WebSocket;
-    try {
-      socket = new WebSocket(wsUrl);
-      socket.onopen = () => setWsConnected(true);
-      socket.onclose = () => setWsConnected(false);
-      socket.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data);
-          if (payload.type === 'SYNC_UPDATE') {
-            if (payload.kpis) setKpis(payload.kpis);
-            if (payload.queue && payload.queue.workers) setWorkers(payload.queue.workers);
-            if (payload.excelData && payload.excelData.schema && payload.excelData.schema.length > 0) {
-              setDataset(payload.excelData);
-            }
-          }
-        } catch (err) {}
-      };
-    } catch (err) {
-      setWsConnected(false);
+    const isProcessing = activeJob && !['Completed', 'Failed', 'WaitingForReview'].includes(activeJob.status);
+    if (!isProcessing && allJobs.some(j => !['Completed', 'Failed', 'WaitingForReview'].includes(j.status))) {
+      // Background jobs are active
+    } else if (!isProcessing) {
+      return;
     }
 
-    return () => {
-      clearInterval(interval);
-      if (socket) socket.close();
-    };
-  }, [currentJobId]);
+    const interval = setInterval(fetchJobState, 1500);
+    return () => clearInterval(interval);
+  }, [fetchJobState, activeJob?.status, allJobs]);
 
   // Persistent jobs count for Sidebar badge
   const totalJobsBadge = allJobs.length > 0 ? allJobs.length : dataset.rows.length;

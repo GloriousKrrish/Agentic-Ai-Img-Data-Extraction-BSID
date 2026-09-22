@@ -1,0 +1,15 @@
+{
+  "doc_id": "DOC-006",
+  "filename": "06_Bistro_Dinner_Bill.png",
+  "doc_type": "receipt",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "tableNumber": "Table 14",
+    "date": "2026-09-20",
+    "serverName": "Marcus",
+    "subtotal": "130.00",
+    "gratuityAmount": "23.40",
+    "totalDue": "153.40"
+  }
+}

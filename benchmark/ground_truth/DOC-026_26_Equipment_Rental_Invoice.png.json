@@ -1,0 +1,12 @@
+{
+  "doc_id": "DOC-026",
+  "filename": "26_Equipment_Rental_Invoice.png",
+  "doc_type": "invoice",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "rentalAgreementId": "EQ-9921",
+    "equipmentName": "CAT Excavator 320",
+    "totalRentalFee": "3200.00"
+  }
+}

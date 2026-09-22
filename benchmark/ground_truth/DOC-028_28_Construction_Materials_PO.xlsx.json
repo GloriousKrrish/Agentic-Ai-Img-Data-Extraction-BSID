@@ -1,0 +1,12 @@
+{
+  "doc_id": "DOC-028",
+  "filename": "28_Construction_Materials_PO.xlsx",
+  "doc_type": "purchase_order",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "poNumber": "PO-BUILD-99",
+    "siteLocation": "Sector 4 Project",
+    "totalBudget": "45000.00"
+  }
+}

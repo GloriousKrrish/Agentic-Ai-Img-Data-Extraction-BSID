@@ -1,0 +1,1167 @@
+[
+  {
+    "document_id": null,
+    "filename": "01_Tech_Hardware_Invoice.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 6,
+    "correct": 6,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "INV-2026-8801",
+        "actual": "INV-2026-8801",
+        "status": "CORRECT"
+      },
+      "invoiceDate": {
+        "expected": "2026-09-15",
+        "actual": "2026-09-15",
+        "status": "CORRECT"
+      },
+      "customerName": {
+        "expected": "Acme Corp",
+        "actual": "Acme Corp",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "5297.00",
+        "actual": "5297.00",
+        "status": "CORRECT"
+      },
+      "taxAmount": {
+        "expected": "529.70",
+        "actual": "529.70",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "5826.70",
+        "actual": "5826.70",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 4.13,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": null,
+    "filename": "02_FreshMart_Grocery_Receipt.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 6,
+    "correct": 6,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "receiptNumber": {
+        "expected": "REC-99201",
+        "actual": "REC-99201",
+        "status": "CORRECT"
+      },
+      "date": {
+        "expected": "2026-09-18",
+        "actual": "2026-09-18",
+        "status": "CORRECT"
+      },
+      "storeLocation": {
+        "expected": "Downtown Branch #4",
+        "actual": "Downtown Branch #4",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "30.46",
+        "actual": "30.46",
+        "status": "CORRECT"
+      },
+      "tax": {
+        "expected": "2.44",
+        "actual": "2.44",
+        "status": "CORRECT"
+      },
+      "grandTotal": {
+        "expected": "32.90",
+        "actual": "32.90",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 8.13,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": null,
+    "filename": "03_Global_Logistics_Manifest.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 5,
+    "correct": 5,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "manifestId": {
+        "expected": "MAN-7712",
+        "actual": "MAN-7712",
+        "status": "CORRECT"
+      },
+      "date": {
+        "expected": "2026-09-19",
+        "actual": "2026-09-19",
+        "status": "CORRECT"
+      },
+      "carrierName": {
+        "expected": "SwiftFreight Express",
+        "actual": "SwiftFreight Express",
+        "status": "CORRECT"
+      },
+      "portOfEntry": {
+        "expected": "Los Angeles CA",
+        "actual": "Los Angeles CA",
+        "status": "CORRECT"
+      },
+      "totalFreightCharge": {
+        "expected": "2200.00",
+        "actual": "2200.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 4.13,
+    "status": "Completed",
+    "confidence": 92.0,
+    "evidence_count": 5
+  },
+  {
+    "document_id": null,
+    "filename": "04_Annual_Property_Tax.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 5,
+    "correct": 5,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 1,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "parcelId": {
+        "expected": "PRC-990-12A",
+        "actual": "PRC-990-12A",
+        "status": "CORRECT"
+      },
+      "taxYear": {
+        "expected": "2026",
+        "actual": "2026",
+        "status": "CORRECT"
+      },
+      "ownerName": {
+        "expected": "Johnathan Miller",
+        "actual": "Johnathan Miller",
+        "status": "CORRECT"
+      },
+      "dueDate": {
+        "expected": "2026-11-30",
+        "actual": "2026-11-30",
+        "status": "CORRECT"
+      },
+      "totalPayable": {
+        "expected": "6400.00",
+        "actual": "6400.00",
+        "status": "CORRECT"
+      },
+      "taxItems": {
+        "expected": null,
+        "actual": "4200.00",
+        "status": "HALLUCINATED"
+      }
+    },
+    "latency_sec": 7.23,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": null,
+    "filename": "05_Diagnostic_Lab_Invoice.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 4,
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 1,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "labOrderId": {
+        "expected": "LAB-44012",
+        "actual": "LAB-44012",
+        "status": "CORRECT"
+      },
+      "patientName": {
+        "expected": "Sarah Connor",
+        "actual": "Sarah Connor",
+        "status": "CORRECT"
+      },
+      "orderingPhysician": {
+        "expected": "Dr. Robert Vance",
+        "actual": "Dr. Robert Vance",
+        "status": "CORRECT"
+      },
+      "totalTestCharges": {
+        "expected": "340.00",
+        "actual": "340.00",
+        "status": "CORRECT"
+      },
+      "testItems": {
+        "expected": null,
+        "actual": "Comprehensive Metabolic Panel (CMP): $180.00, Lipid Panel Profile: $95.00, Hemoglobin A1c Test: $65.00",
+        "status": "HALLUCINATED"
+      }
+    },
+    "latency_sec": 4.15,
+    "status": "Completed",
+    "confidence": 91.0,
+    "evidence_count": 5
+  },
+  {
+    "document_id": null,
+    "filename": "06_Bistro_Dinner_Bill.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 6,
+    "correct": 6,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 1,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "tableNumber": {
+        "expected": "Table 14",
+        "actual": "Table 14",
+        "status": "CORRECT"
+      },
+      "date": {
+        "expected": "2026-09-20",
+        "actual": "2026-09-20",
+        "status": "CORRECT"
+      },
+      "serverName": {
+        "expected": "Marcus",
+        "actual": "Marcus",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "130.00",
+        "actual": "130.00",
+        "status": "CORRECT"
+      },
+      "gratuityAmount": {
+        "expected": "23.40",
+        "actual": "23.40",
+        "status": "CORRECT"
+      },
+      "totalDue": {
+        "expected": "153.40",
+        "actual": "153.40",
+        "status": "CORRECT"
+      },
+      "restaurantName": {
+        "expected": null,
+        "actual": "L'ETOILE BISTRO",
+        "status": "HALLUCINATED"
+      }
+    },
+    "latency_sec": 4.12,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 7
+  },
+  {
+    "document_id": null,
+    "filename": "07_Employee_Onboarding_Record.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 5,
+    "correct": 5,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 1,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "employeeId": {
+        "expected": "EMP-9021",
+        "actual": "EMP-9021",
+        "status": "CORRECT"
+      },
+      "employeeName": {
+        "expected": "David K Zhang",
+        "actual": "David K Zhang",
+        "status": "CORRECT"
+      },
+      "department": {
+        "expected": "Cloud Infrastructure",
+        "actual": "Cloud Infrastructure",
+        "status": "CORRECT"
+      },
+      "hireDate": {
+        "expected": "2026-09-01",
+        "actual": "2026-09-01",
+        "status": "CORRECT"
+      },
+      "totalCompensationPackage": {
+        "expected": "9575.00",
+        "actual": "9575.00",
+        "status": "CORRECT"
+      },
+      "compensationItems": {
+        "expected": null,
+        "actual": "Base Monthly Salary: $8500.00, Health Insurance Benefit: $650.00, 401k Employer Match: $425.00",
+        "status": "HALLUCINATED"
+      }
+    },
+    "latency_sec": 4.12,
+    "status": "Completed",
+    "confidence": 92.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": null,
+    "filename": "08_Auto_Service_Invoice.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 6,
+    "correct": 6,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "workOrderId": {
+        "expected": "WO-55102",
+        "actual": "WO-55102",
+        "status": "CORRECT"
+      },
+      "vehicleDetails": {
+        "expected": "2024 Toyota RAV4",
+        "actual": "2024 Toyota RAV4",
+        "status": "CORRECT"
+      },
+      "vin": {
+        "expected": "4T1B11HK5RU99102",
+        "actual": "4T1B11HK5RU99102",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "459.85",
+        "actual": "459.85",
+        "status": "CORRECT"
+      },
+      "tax": {
+        "expected": "36.79",
+        "actual": "36.79",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "496.64",
+        "actual": "496.64",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 7.16,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": null,
+    "filename": "09_Enterprise_Purchase_Order.csv",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 2,
+    "correct": 2,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "poNumber": {
+        "expected": "PO-2026-99",
+        "actual": "PO-2026-99",
+        "status": "CORRECT"
+      },
+      "vendorName": {
+        "expected": "Industrial Supplies Co",
+        "actual": "Industrial Supplies Co",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 3.12,
+    "status": "Completed",
+    "confidence": 95.0,
+    "evidence_count": 2
+  },
+  {
+    "document_id": null,
+    "filename": "10_City_Power_Utility_Bill.xlsx",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 6,
+    "correct": 6,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "accountNumber": {
+        "expected": "ACC-883019",
+        "actual": "ACC-883019",
+        "status": "CORRECT"
+      },
+      "customerName": {
+        "expected": "Elena Rostova",
+        "actual": "Elena Rostova",
+        "status": "CORRECT"
+      },
+      "billingPeriod": {
+        "expected": "Aug 15 - Sep 15 2026",
+        "actual": "Aug 15 - Sep 15 2026",
+        "status": "CORRECT"
+      },
+      "kwhConsumed": {
+        "expected": "840",
+        "actual": "840",
+        "status": "CORRECT"
+      },
+      "ratePerKwh": {
+        "expected": "0.14",
+        "actual": "$0.14",
+        "status": "CORRECT"
+      },
+      "totalCharge": {
+        "expected": "117.60",
+        "actual": "117.60",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 4.16,
+    "status": "Completed",
+    "confidence": 96.0,
+    "evidence_count": 6
+  },
+  {
+    "document_id": null,
+    "filename": "MedicalBill.png",
+    "source_class": "INDEPENDENT_REAL_REFERENCE",
+    "total_gt_fields": 9,
+    "correct": 9,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "12245",
+        "actual": "12245",
+        "status": "CORRECT"
+      },
+      "invoiceDate": {
+        "expected": "07/01/23",
+        "actual": "07/01/23",
+        "status": "CORRECT"
+      },
+      "dueDate": {
+        "expected": "07/30/23",
+        "actual": "07/30/23",
+        "status": "CORRECT"
+      },
+      "patientName": {
+        "expected": "Apple Song",
+        "actual": "Apple Song",
+        "status": "CORRECT"
+      },
+      "physicianName": {
+        "expected": "Dr. Anna Bride",
+        "actual": "Dr. Anna Bride",
+        "status": "CORRECT"
+      },
+      "subTotal": {
+        "expected": "745.00",
+        "actual": "745.00",
+        "status": "CORRECT"
+      },
+      "taxRate": {
+        "expected": "9",
+        "actual": "9",
+        "status": "CORRECT"
+      },
+      "taxAmount": {
+        "expected": "157.05",
+        "actual": "157.05",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "1902.05",
+        "actual": "1902.05",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 6.16,
+    "status": "WaitingForReview",
+    "confidence": 73.0,
+    "evidence_count": 9
+  },
+  {
+    "document_id": null,
+    "filename": "test_bill.png",
+    "source_class": "INDEPENDENT_REAL_REFERENCE",
+    "total_gt_fields": 5,
+    "correct": 0,
+    "incorrect": 3,
+    "missing": 2,
+    "hallucinated": 6,
+    "field_accuracy_pct": 0.0,
+    "field_details": {
+      "invoiceNumber": {
+        "expected": "12245",
+        "actual": "US-001",
+        "status": "INCORRECT"
+      },
+      "invoiceDate": {
+        "expected": "07/01/23",
+        "actual": "2019-02-11",
+        "status": "INCORRECT"
+      },
+      "patientName": {
+        "expected": "Apple Song",
+        "actual": null,
+        "status": "MISSING"
+      },
+      "subTotal": {
+        "expected": "745.00",
+        "actual": null,
+        "status": "MISSING"
+      },
+      "totalAmount": {
+        "expected": "1902.05",
+        "actual": "154.06",
+        "status": "INCORRECT"
+      },
+      "dueDate": {
+        "expected": null,
+        "actual": "2019-02-26",
+        "status": "HALLUCINATED"
+      },
+      "billTo": {
+        "expected": null,
+        "actual": "John Smith, 2 Court Square, New York, NY 12210",
+        "status": "HALLUCINATED"
+      },
+      "shipTo": {
+        "expected": null,
+        "actual": "John Smith, 3787 Pineview Drive, Cambridge, MA 12210",
+        "status": "HALLUCINATED"
+      },
+      "subtotal": {
+        "expected": null,
+        "actual": "145.00",
+        "status": "HALLUCINATED"
+      },
+      "taxAmount": {
+        "expected": null,
+        "actual": "9.06",
+        "status": "HALLUCINATED"
+      },
+      "purchaseOrderNumber": {
+        "expected": null,
+        "actual": "2312/2019",
+        "status": "HALLUCINATED"
+      }
+    },
+    "latency_sec": 5.14,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 9
+  },
+  {
+    "document_id": null,
+    "filename": "13_Cloud_Hosting_Invoice.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 4,
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceId": {
+        "expected": "AWS-2026-90",
+        "actual": "AWS-2026-90",
+        "status": "CORRECT"
+      },
+      "billingMonth": {
+        "expected": "September 2026",
+        "actual": "September 2026",
+        "status": "CORRECT"
+      },
+      "accountName": {
+        "expected": "DevOps Hub",
+        "actual": "DevOps Hub",
+        "status": "CORRECT"
+      },
+      "totalCost": {
+        "expected": "1420.50",
+        "actual": "1420.50",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 8.18,
+    "status": "Completed",
+    "confidence": 91.0,
+    "evidence_count": 4
+  },
+  {
+    "document_id": null,
+    "filename": "14_Coffee_Shop_Receipt.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "shopName": {
+        "expected": "Bean & Brew Coffee",
+        "actual": "Bean & Brew Coffee",
+        "status": "CORRECT"
+      },
+      "date": {
+        "expected": "2026-09-21",
+        "actual": "2026-09-21",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "18.75",
+        "actual": "18.75",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 9.16,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": null,
+    "filename": "15_Freight_Shipping_Order.csv",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 4,
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "orderId": {
+        "expected": "ORD-5541",
+        "actual": "ORD-5541",
+        "status": "CORRECT"
+      },
+      "origin": {
+        "expected": "Chicago IL",
+        "actual": "Chicago IL",
+        "status": "CORRECT"
+      },
+      "destination": {
+        "expected": "Miami FL",
+        "actual": "Miami FL",
+        "status": "CORRECT"
+      },
+      "freightCost": {
+        "expected": "1850.00",
+        "actual": "1850.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 9.24,
+    "status": "Completed",
+    "confidence": 96.0,
+    "evidence_count": 4
+  },
+  {
+    "document_id": null,
+    "filename": "16_Water_Utility_Statement.xlsx",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "accountNumber": {
+        "expected": "WAT-9921",
+        "actual": "WAT-9921",
+        "status": "CORRECT"
+      },
+      "gallonsUsed": {
+        "expected": "4500",
+        "actual": "4500",
+        "status": "CORRECT"
+      },
+      "amountDue": {
+        "expected": "84.20",
+        "actual": "84.20",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 8.21,
+    "status": "Completed",
+    "confidence": 97.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": null,
+    "filename": "17_Legal_Services_Bill.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 4,
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "billId": {
+        "expected": "LEG-4410",
+        "actual": "LEG-4410",
+        "status": "CORRECT"
+      },
+      "clientName": {
+        "expected": "Vanguard Partners",
+        "actual": "Vanguard Partners",
+        "status": "CORRECT"
+      },
+      "hoursBilled": {
+        "expected": "12.5",
+        "actual": "12.5",
+        "status": "CORRECT"
+      },
+      "totalFee": {
+        "expected": "3750.00",
+        "actual": "3750.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 9.44,
+    "status": "Completed",
+    "confidence": 91.0,
+    "evidence_count": 4
+  },
+  {
+    "document_id": null,
+    "filename": "18_Dental_Clinic_Statement.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 4,
+    "correct": 4,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "statementNo": {
+        "expected": "DEN-8812",
+        "actual": "DEN-8812",
+        "status": "CORRECT"
+      },
+      "patientName": {
+        "expected": "Michael Scott",
+        "actual": "Michael Scott",
+        "status": "CORRECT"
+      },
+      "copayAmount": {
+        "expected": "50.00",
+        "actual": "50.00",
+        "status": "CORRECT"
+      },
+      "insuranceCovered": {
+        "expected": "450.00",
+        "actual": "450.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 9.2,
+    "status": "Completed",
+    "confidence": 91.0,
+    "evidence_count": 4
+  },
+  {
+    "document_id": null,
+    "filename": "19_Software_License_PO.csv",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "poNumber": {
+        "expected": "PO-SOFT-01",
+        "actual": "PO-SOFT-01",
+        "status": "CORRECT"
+      },
+      "vendor": {
+        "expected": "JetBrains Inc",
+        "actual": "JetBrains Inc",
+        "status": "CORRECT"
+      },
+      "totalPrice": {
+        "expected": "899.00",
+        "actual": "899.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 13.3,
+    "status": "Completed",
+    "confidence": 97.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": null,
+    "filename": "20_Telecom_Monthly_Bill.xlsx",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "accountNumber": {
+        "expected": "TEL-3301",
+        "actual": "TEL-3301",
+        "status": "CORRECT"
+      },
+      "planName": {
+        "expected": "5G Enterprise Unlimited",
+        "actual": "5G Enterprise Unlimited",
+        "status": "CORRECT"
+      },
+      "monthlyCharge": {
+        "expected": "299.99",
+        "actual": "299.99",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 7.32,
+    "status": "Completed",
+    "confidence": 95.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": null,
+    "filename": "21_Adversarial_Missing_Fields.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 2,
+    "correct": 2,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "vendorName": {
+        "expected": "Incomplete Vendor Inc",
+        "actual": "Incomplete Vendor Inc",
+        "status": "CORRECT"
+      },
+      "subtotal": {
+        "expected": "500.00",
+        "actual": "500.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 12.23,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 2
+  },
+  {
+    "document_id": null,
+    "filename": "22_Adversarial_Math_Mismatch.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 1,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "subtotal": {
+        "expected": "100.00",
+        "actual": "100.00",
+        "status": "CORRECT"
+      },
+      "tax": {
+        "expected": "10.00",
+        "actual": "10.00",
+        "status": "CORRECT"
+      },
+      "totalAmount": {
+        "expected": "150.00",
+        "actual": "150.00",
+        "status": "CORRECT"
+      },
+      "invoiceNumber": {
+        "expected": null,
+        "actual": "DOC-022",
+        "status": "HALLUCINATED"
+      }
+    },
+    "latency_sec": 22.43,
+    "status": "WaitingForReview",
+    "confidence": 74.0,
+    "evidence_count": 4
+  },
+  {
+    "document_id": null,
+    "filename": "23_Adversarial_Conflicting_Dates.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 2,
+    "correct": 2,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 1,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "invoiceDate": {
+        "expected": "2026-09-30",
+        "actual": "2026-09-30",
+        "status": "CORRECT"
+      },
+      "dueDate": {
+        "expected": "2026-09-01",
+        "actual": "2026-09-01",
+        "status": "CORRECT"
+      },
+      "invoiceNumber": {
+        "expected": null,
+        "actual": "DOC-023",
+        "status": "HALLUCINATED"
+      }
+    },
+    "latency_sec": 12.22,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": null,
+    "filename": "24_Corporate_Travel_Receipt.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "hotelName": {
+        "expected": "Grand Hyatt NYC",
+        "actual": "Grand Hyatt NYC",
+        "status": "CORRECT"
+      },
+      "checkOutDate": {
+        "expected": "2026-09-10",
+        "actual": "2026-09-10",
+        "status": "CORRECT"
+      },
+      "totalPaid": {
+        "expected": "840.00",
+        "actual": "840.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 8.12,
+    "status": "Completed",
+    "confidence": 93.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": null,
+    "filename": "25_Warehouse_Inventory_Manifest.csv",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 2,
+    "correct": 2,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "warehouseId": {
+        "expected": "WH-NORTH-2",
+        "actual": "WH-NORTH-2",
+        "status": "CORRECT"
+      },
+      "totalPallets": {
+        "expected": "48",
+        "actual": "48",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 6.19,
+    "status": "Completed",
+    "confidence": 98.0,
+    "evidence_count": 2
+  },
+  {
+    "document_id": null,
+    "filename": "26_Equipment_Rental_Invoice.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "rentalAgreementId": {
+        "expected": "EQ-9921",
+        "actual": "EQ-9921",
+        "status": "CORRECT"
+      },
+      "equipmentName": {
+        "expected": "CAT Excavator 320",
+        "actual": "CAT Excavator 320",
+        "status": "CORRECT"
+      },
+      "totalRentalFee": {
+        "expected": "3200.00",
+        "actual": "3200.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 9.19,
+    "status": "Completed",
+    "confidence": 92.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": null,
+    "filename": "27_Pharma_Supply_Invoice.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "batchNumber": {
+        "expected": "BAT-7701",
+        "actual": "BAT-7701",
+        "status": "CORRECT"
+      },
+      "supplierName": {
+        "expected": "Apex Pharmaceuticals",
+        "actual": "Apex Pharmaceuticals",
+        "status": "CORRECT"
+      },
+      "totalCost": {
+        "expected": "12400.00",
+        "actual": "12400.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 9.19,
+    "status": "Completed",
+    "confidence": 92.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": null,
+    "filename": "28_Construction_Materials_PO.xlsx",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 3,
+    "correct": 3,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "poNumber": {
+        "expected": "PO-BUILD-99",
+        "actual": "PO-BUILD-99",
+        "status": "CORRECT"
+      },
+      "siteLocation": {
+        "expected": "Sector 4 Project",
+        "actual": "Sector 4 Project",
+        "status": "CORRECT"
+      },
+      "totalBudget": {
+        "expected": "45000.00",
+        "actual": "45000.00",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 7.19,
+    "status": "Completed",
+    "confidence": 97.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": null,
+    "filename": "29_MultiPage_Stitched_Invoice.png",
+    "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+    "total_gt_fields": 2,
+    "correct": 2,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 1,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "pageCount": {
+        "expected": "2",
+        "actual": "2",
+        "status": "CORRECT"
+      },
+      "grandTotal": {
+        "expected": "12500.00",
+        "actual": "12500.00",
+        "status": "CORRECT"
+      },
+      "invoiceNumber": {
+        "expected": null,
+        "actual": "BENCHMARK DOC-029",
+        "status": "HALLUCINATED"
+      }
+    },
+    "latency_sec": 9.16,
+    "status": "Completed",
+    "confidence": 92.0,
+    "evidence_count": 3
+  },
+  {
+    "document_id": null,
+    "filename": "30_Legacy_Project_Fixture.png",
+    "source_class": "GENERATED_PROJECT_FIXTURE",
+    "total_gt_fields": 2,
+    "correct": 2,
+    "incorrect": 0,
+    "missing": 0,
+    "hallucinated": 0,
+    "field_accuracy_pct": 100.0,
+    "field_details": {
+      "fixtureId": {
+        "expected": "FIX-30",
+        "actual": "FIX-30",
+        "status": "CORRECT"
+      },
+      "testStatus": {
+        "expected": "REGRESSION_PASS",
+        "actual": "REGRESSION_PASS",
+        "status": "CORRECT"
+      }
+    },
+    "latency_sec": 8.16,
+    "status": "Completed",
+    "confidence": 90.0,
+    "evidence_count": 2
+  }
+]

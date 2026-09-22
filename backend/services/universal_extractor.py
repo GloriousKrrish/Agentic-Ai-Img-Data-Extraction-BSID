@@ -75,26 +75,7 @@ def extract_universal_document(
 
     if not api_key:
         print("Universal Extractor: GEMINI_API_KEY is not set.")
-        fallback_fields = {col["key"]: "Key Missing — Add GEMINI_API_KEY in Settings" for col in schema}
-        return {
-            "modelUsed": "fallback-engine",
-            "documentCategory": category,
-            "category": category,
-            "documentTitle": schema_info.get("documentTitle", "Extracted Document"),
-            "schema": schema,
-            "rows": [
-                {
-                    "rowIndex": 1,
-                    "fields": fallback_fields,
-                    "status": "COMPLETED_WITH_NOTICE",
-                    "confidence": 0.0
-                }
-            ],
-            "extractedFields": fallback_fields,
-            "confidence": 0.0,
-            "status": "SUCCESS",
-            "notice": "GEMINI_API_KEY is missing. Please enter a valid key in Settings & API Key."
-        }
+        raise ValueError("GEMINI_API_KEY is not configured. Please set your Gemini API Key in Settings.")
 
     # Construct dynamic JSON Schema properties for Gemini structured output
     json_properties = {}

@@ -72,29 +72,36 @@ export const Processing: React.FC<ProcessingProps> = ({ workers = [], pendingTas
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span className={`badge ${isCompleted ? 'badge-success' : isFailed ? 'badge-error' : 'badge-indigo'}`}>
+              <span className={`badge ${isCompleted ? 'badge-success' : isFailed ? 'badge-error' : activeJob.status === 'WaitingForReview' ? 'badge-warning' : 'badge-indigo'}`}>
                 {activeJob.status || 'PROCESSING'}
               </span>
-              {isCompleted && onNavigate && (
+              {(isCompleted || activeJob.status === 'WaitingForReview' || isFailed) && onNavigate && (
                 <button
                   onClick={() => onNavigate('results')}
                   className="btn-primary"
                   style={{ fontSize: 13, padding: '0.5rem 1rem' }}
                 >
-                  <span>View Results</span> <ArrowRight size={14} />
+                  <span>{isFailed ? 'View Job Errors' : 'View Results'}</span> <ArrowRight size={14} />
                 </button>
               )}
             </div>
           </div>
 
+          {/* Failure Banner if Job Failed */}
+          {isFailed && activeJob.error && (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '10px 14px', color: '#991B1B', fontSize: 13, fontWeight: 500 }}>
+              <strong>Extraction Error:</strong> {activeJob.error}
+            </div>
+          )}
+
           {/* Progress Bar */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 6 }}>
-              <span>Extraction Progress</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: isFailed ? '#DC2626' : '#4F46E5', marginBottom: 6 }}>
+              <span>{isFailed ? 'Extraction Terminated' : 'Extraction Progress'}</span>
               <span>{progress}%</span>
             </div>
             <div style={{ height: 8, background: '#F1F5F9', borderRadius: 9999, overflow: 'hidden' }}>
-              <div style={{ height: '100%', background: '#4F46E5', width: `${progress}%`, borderRadius: 9999, transition: 'width 0.3s ease' }} />
+              <div style={{ height: '100%', background: isFailed ? '#DC2626' : activeJob.status === 'WaitingForReview' ? '#F59E0B' : '#4F46E5', width: `${progress}%`, borderRadius: 9999, transition: 'width 0.3s ease' }} />
             </div>
           </div>
         </div>

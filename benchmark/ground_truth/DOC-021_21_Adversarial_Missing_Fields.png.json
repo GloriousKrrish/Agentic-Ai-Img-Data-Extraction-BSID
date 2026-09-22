@@ -1,0 +1,11 @@
+{
+  "doc_id": "DOC-021",
+  "filename": "21_Adversarial_Missing_Fields.png",
+  "doc_type": "invoice",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "vendorName": "Incomplete Vendor Inc",
+    "subtotal": "500.00"
+  }
+}

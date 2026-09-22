@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, Sparkles, FileText, CheckCircle2, Loader2, Image, FileSpreadsheet, FileCode, Archive, AlertCircle, ArrowRight, Bot, Brain, ChevronDown } from 'lucide-react';
+import { UploadCloud, Sparkles, FileText, CheckCircle2, Loader2, Image, FileSpreadsheet, FileCode, Archive, AlertCircle, ArrowRight, Bot, Brain } from 'lucide-react';
 import { getApiUrl } from '../config/api';
 
 interface UploadProps {
@@ -86,7 +86,10 @@ export const Upload: React.FC<UploadProps> = ({ onNavigate, onJobCreated }) => {
         localStorage.setItem('current_active_job_id', jobId);
         if (onJobCreated) onJobCreated(jobId);
         setUploadState('queued');
-        setStatusMessage(`Job ${jobId} created successfully! Extraction in progress.`);
+        setStatusMessage(`Job ${jobId} created successfully! Redirecting to live execution telemetry...`);
+        setTimeout(() => {
+          onNavigate('processing');
+        }, 500);
       } else {
         const errJson = await res.json().catch(() => ({}));
         const errMsg = errJson.detail || 'Upload failed';

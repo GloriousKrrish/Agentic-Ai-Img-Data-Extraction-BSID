@@ -1,0 +1,12 @@
+{
+  "doc_id": "DOC-016",
+  "filename": "16_Water_Utility_Statement.xlsx",
+  "doc_type": "utility_bill",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "accountNumber": "WAT-9921",
+    "gallonsUsed": "4500",
+    "amountDue": "84.20"
+  }
+}

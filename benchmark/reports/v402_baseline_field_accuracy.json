@@ -1,0 +1,53 @@
+{
+  "mode": "baseline",
+  "total_documents": 30,
+  "total_fields": 118,
+  "correct_fields": 113,
+  "incorrect_fields": 3,
+  "missing_fields": 2,
+  "hallucinated_fields": 13,
+  "overall_field_accuracy_pct": 95.76,
+  "independent_accuracy_pct": 95.69,
+  "hitl_rate_pct": 6.67,
+  "average_latency_sec": 8.0,
+  "confidence_analysis": {
+    "0-50%": {
+      "total": 0,
+      "correct": 0
+    },
+    "50-70%": {
+      "total": 0,
+      "correct": 0
+    },
+    "70-80%": {
+      "total": 12,
+      "correct": 12
+    },
+    "80-90%": {
+      "total": 0,
+      "correct": 0
+    },
+    "90-95%": {
+      "total": 80,
+      "correct": 75
+    },
+    "95-100%": {
+      "total": 26,
+      "correct": 26
+    }
+  },
+  "class_breakdown": {
+    "A": {
+      "total": 14,
+      "correct": 9
+    },
+    "B": {
+      "total": 102,
+      "correct": 102
+    },
+    "C": {
+      "total": 2,
+      "correct": 2
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "doc_id": "DOC-027",
+  "filename": "27_Pharma_Supply_Invoice.png",
+  "doc_type": "medical_report",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "batchNumber": "BAT-7701",
+    "supplierName": "Apex Pharmaceuticals",
+    "totalCost": "12400.00"
+  }
+}

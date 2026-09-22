@@ -151,7 +151,7 @@ class AgenticExecutionEngine:
 
             validated_fields, score_card = validation_engine.validate_and_score(aggregated.document_fields, plan, ocr_text, schema)
             
-            final_status = "COMPLETED" if (score_card.is_trusted and not aggregated.conflicts and table_exec_res.validation_report.structural_validity) else "WAITING_FOR_HUMAN_REVIEW"
+            final_status = "Completed" if (score_card.is_trusted and not aggregated.conflicts and table_exec_res.validation_report.structural_validity) else "WaitingForReview"
             record_step("job_manager", "Finalize Multi-Page PDF Job State", "COMPLETED", time.time(), f"Final Status: {final_status}, Overall Conf: {score_card.overall_confidence*100:.1f}%")
 
             return {
@@ -267,10 +267,33 @@ class AgenticExecutionEngine:
             validated_fields, score_card = validation_engine.validate_and_score(validated_fields, plan, ocr_text, schema)
             record_step("vision_extraction_agent", f"Targeted Re-extraction (Pass {replan_count + 1})", "COMPLETED", t_replan, f"New Overall Confidence: {score_card.overall_confidence*100:.1f}%", conf=score_card.overall_confidence)
 
-        # 7. HITL State Determination
-        final_status = "COMPLETED"
-        if score_card.human_review_required:
-            final_status = "WAITING_FOR_HUMAN_REVIEW"
+        # Check if extracted fields contain actual data
+        has_data = bool(validated_fields) and any(str(v).strip() for k, v in validated_fields.items() if v and not str(v).startswith("Key Missing"))
+
+        # 7. HITL State Determination & Status Normalization
+        if not has_data:
+            final_status = "Failed"
+            rows_output = []
+        elif score_card.human_review_required:
+            final_status = "WaitingForReview"
+            rows_output = [
+                {
+                    "rowIndex": 1,
+                    "fields": validated_fields,
+                    "status": final_status,
+                    "confidence": round(score_card.overall_confidence * 100.0, 1)
+                }
+            ]
+        else:
+            final_status = "Completed"
+            rows_output = [
+                {
+                    "rowIndex": 1,
+                    "fields": validated_fields,
+                    "status": final_status,
+                    "confidence": round(score_card.overall_confidence * 100.0, 1)
+                }
+            ]
 
         record_step("job_manager", "Finalize Job State", "COMPLETED", time.time(), f"Final Status: {final_status}, Trusted: {score_card.is_trusted}")
 
@@ -281,14 +304,7 @@ class AgenticExecutionEngine:
             "analysis": analysis.dict(),
             "plan": plan.dict(),
             "schema": schema,
-            "rows": [
-                {
-                    "rowIndex": 1,
-                    "fields": validated_fields,
-                    "status": final_status,
-                    "confidence": round(score_card.overall_confidence * 100.0, 1)
-                }
-            ],
+            "rows": rows_output,
             "extractedFields": validated_fields,
             "executionLogs": [s.dict() for s in step_logs],
             "documentCategory": schema_info.get("documentCategory", plan.target_category),

@@ -1,0 +1,13 @@
+{
+  "doc_id": "DOC-018",
+  "filename": "18_Dental_Clinic_Statement.png",
+  "doc_type": "medical_report",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "statementNo": "DEN-8812",
+    "patientName": "Michael Scott",
+    "copayAmount": "50.00",
+    "insuranceCovered": "450.00"
+  }
+}

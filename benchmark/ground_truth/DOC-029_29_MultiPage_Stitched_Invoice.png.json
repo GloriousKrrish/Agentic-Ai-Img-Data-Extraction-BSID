@@ -1,0 +1,11 @@
+{
+  "doc_id": "DOC-029",
+  "filename": "29_MultiPage_Stitched_Invoice.png",
+  "doc_type": "invoice",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "pageCount": "2",
+    "grandTotal": "12500.00"
+  }
+}

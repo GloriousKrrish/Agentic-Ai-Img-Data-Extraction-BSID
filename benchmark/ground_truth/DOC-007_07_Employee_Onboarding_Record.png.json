@@ -1,0 +1,14 @@
+{
+  "doc_id": "DOC-007",
+  "filename": "07_Employee_Onboarding_Record.png",
+  "doc_type": "hr_record",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "employeeId": "EMP-9021",
+    "employeeName": "David K Zhang",
+    "department": "Cloud Infrastructure",
+    "hireDate": "2026-09-01",
+    "totalCompensationPackage": "9575.00"
+  }
+}

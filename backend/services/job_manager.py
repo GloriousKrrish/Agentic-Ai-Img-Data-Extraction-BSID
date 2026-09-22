@@ -36,6 +36,24 @@ else:
 
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
+def normalize_job_status(status: str) -> str:
+    s = (status or "").upper().strip()
+    if s in ["COMPLETED", "SUCCESS", "DONE"]:
+        return "Completed"
+    if s in ["FAILED", "ERROR"]:
+        return "Failed"
+    if s in ["WAITING_FOR_HUMAN_REVIEW", "WAITINGFORREVIEW", "WAITING_FOR_REVIEW", "HITL_REQUIRED"]:
+        return "WaitingForReview"
+    if s in ["ANALYZING"]:
+        return "Analyzing"
+    if s in ["EXTRACTING"]:
+        return "Extracting"
+    if s in ["PREPARING"]:
+        return "Preparing"
+    if s in ["PREPROCESSING"]:
+        return "Preprocessing"
+    return status.title() if status else "Analyzing"
+
 class JobManager:
     def __init__(self, db_path: Path = DB_PATH):
         self.db_path = str(db_path)
@@ -90,13 +108,33 @@ class JobManager:
             )
             """)
 
-            # Phase 4: Add new columns if they don't exist (safe for existing DBs)
+            # Phase 4 & v4.1: Add new columns if they don't exist (safe for existing DBs)
             try:
                 cursor.execute("ALTER TABLE jobs ADD COLUMN user_schema_id TEXT")
             except Exception:
                 pass  # Column already exists
             try:
                 cursor.execute("ALTER TABLE jobs ADD COLUMN schema_validation_json TEXT")
+            except Exception:
+                pass  # Column already exists
+            try:
+                cursor.execute("ALTER TABLE jobs ADD COLUMN confidence REAL DEFAULT 95.0")
+            except Exception:
+                pass  # Column already exists
+            try:
+                cursor.execute("ALTER TABLE jobs ADD COLUMN user_id TEXT DEFAULT 'user_default'")
+            except Exception:
+                pass  # Column already exists
+            try:
+                cursor.execute("ALTER TABLE jobs ADD COLUMN attempt_count INTEGER DEFAULT 1")
+            except Exception:
+                pass  # Column already exists
+            try:
+                cursor.execute("ALTER TABLE jobs ADD COLUMN failed_at TEXT")
+            except Exception:
+                pass  # Column already exists
+            try:
+                cursor.execute("ALTER TABLE jobs ADD COLUMN error_code TEXT")
             except Exception:
                 pass  # Column already exists
 
@@ -108,7 +146,7 @@ class JobManager:
                 cursor = conn.cursor()
                 cursor.execute("SELECT value FROM system_settings WHERE key = ?", (key,))
                 row = cursor.fetchone()
-                if row and row["value"]:
+                if row is not None:
                     return row["value"]
         except Exception:
             pass
@@ -127,20 +165,23 @@ class JobManager:
             print(f"Error setting system setting {key}: {e}")
 
     def get_api_key(self) -> str:
-        # Priority: 1. config.GEMINI_API_KEY, 2. SQLite system_settings, 3. os.getenv
+        # Check SQLite system_settings first if explicitly saved
+        db_key = self.get_setting("gemini_api_key", None)
+        if db_key is not None:
+            return db_key.strip()
         key = (getattr(config, "GEMINI_API_KEY", "") or "").strip()
-        if not key:
-            key = self.get_setting("gemini_api_key", "").strip()
         if not key:
             key = os.getenv("GEMINI_API_KEY", "").strip()
         return key
 
 
     def create_job(self, filename: str, file_bytes: bytes, mime_type: str = "",
-                   user_schema_id: str = "", user_schema_json: dict = None) -> dict:
+                   user_schema_id: str = "", user_schema_json: dict = None,
+                   user_id: str = "user_default") -> dict:
         """
-        Creates a new extraction job.
+        Creates a new extraction job bound to user_id.
         Phase 4: accepts optional user_schema_id (load from store) or user_schema_json (inline).
+        v4.1: stores user_id for multi-tenant isolation.
         """
         job_id = f"job-{uuid.uuid4().hex[:8]}"
         created_at = datetime.utcnow().isoformat() + "Z"
@@ -168,7 +209,7 @@ class JobManager:
         pipeline_type = routing_info["pipeline_type"]
         category = routing_info["category"]
         
-        # Save file to disk
+        # Save file to disk safely
         file_ext = Path(filename).suffix
         safe_filename = f"{job_id}{file_ext}"
         saved_file_path = UPLOADS_DIR / safe_filename
@@ -183,23 +224,23 @@ class JobManager:
             cursor.execute("""
             INSERT INTO jobs (
                 job_id, filename, file_type, file_path, status, current_stage, 
-                current_worker, progress, created_at, document_category, schema_json, rows_json, user_schema_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                current_worker, progress, created_at, document_category, schema_json, rows_json, user_schema_id, user_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 job_id, filename, mime_type or "unknown", str(saved_file_path),
                 "Analyzing", initial_stage, worker_label,
-                0.0, created_at, category, json.dumps([]), json.dumps([]), resolved_schema_id or None
+                0.0, created_at, category, json.dumps([]), json.dumps([]), resolved_schema_id or None, user_id or "user_default"
             ))
             conn.commit()
 
         if resolved_schema:
             self.add_log(job_id, "INFO", f"Phase 4: Schema-constrained extraction with schema '{resolved_schema.name}' ({len(resolved_schema.fields)} fields)")
 
-        if pipeline_type == "SINGLE_DOCUMENT" or IS_VERCEL:
-            # Single documents execute directly via single document pipeline
+        if IS_VERCEL:
+            # On Vercel serverless platform, execute synchronously
             self._run_job_pipeline(job_id, user_schema=resolved_schema)
         else:
-            # Multi-row batch datasets start asynchronous background processing
+            # Always execute asynchronously in background thread to avoid blocking API responses
             thread = threading.Thread(target=self._run_job_pipeline, args=(job_id,), kwargs={"user_schema": resolved_schema}, daemon=True)
             thread.start()
 
@@ -219,14 +260,15 @@ class JobManager:
             print(f"Error adding log for {job_id}: {e}")
 
     def update_job_progress(self, job_id: str, status: str, stage: str, progress: float, **kwargs):
+        norm_status = normalize_job_status(status)
         updates = ["status = ?", "current_stage = ?", "progress = ?"]
-        params = [status, stage, progress]
+        params = [norm_status, stage, progress]
 
-        if status == "Analyzing" or status == "Extracting":
+        if norm_status in ["Analyzing", "Extracting", "Preparing", "Preprocessing"]:
             if "started_at" not in kwargs:
                 kwargs["started_at"] = datetime.utcnow().isoformat() + "Z"
 
-        if status == "Completed" or status == "Failed":
+        if norm_status in ["Completed", "Failed", "WaitingForReview"]:
             kwargs["completed_at"] = datetime.utcnow().isoformat() + "Z"
 
         for key, val in kwargs.items():
@@ -244,7 +286,7 @@ class JobManager:
             cursor.execute(sql, params)
             conn.commit()
 
-        self.add_log(job_id, "INFO" if status != "Failed" else "ERROR", f"[{status}] Stage: {stage} ({progress:.0f}%)")
+        self.add_log(job_id, "INFO" if norm_status != "Failed" else "ERROR", f"[{norm_status}] Stage: {stage} ({progress:.0f}%)")
 
     def get_job(self, job_id: str) -> dict:
         with self._get_connection() as conn:
@@ -255,6 +297,7 @@ class JobManager:
                 return None
 
             job = dict(row)
+            job["status"] = normalize_job_status(job.get("status"))
             job["schema"] = json.loads(job["schema_json"]) if job.get("schema_json") else []
             job["rows"] = json.loads(job["rows_json"]) if job.get("rows_json") else []
 
@@ -276,6 +319,7 @@ class JobManager:
             result = []
             for r in rows:
                 j = dict(r)
+                j["status"] = normalize_job_status(j.get("status"))
                 j["schema"] = json.loads(j["schema_json"]) if j.get("schema_json") else []
                 j["rows"] = json.loads(j["rows_json"]) if j.get("rows_json") else []
                 result.append(j)
@@ -289,6 +333,7 @@ class JobManager:
             result = []
             for r in rows:
                 j = dict(r)
+                j["status"] = normalize_job_status(j.get("status"))
                 j["schema"] = json.loads(j["schema_json"]) if j.get("schema_json") else []
                 j["rows"] = json.loads(j["rows_json"]) if j.get("rows_json") else []
                 result.append(j)
@@ -378,6 +423,9 @@ class JobManager:
         filename = job["filename"]
 
         try:
+            if not self.get_api_key():
+                raise ValueError("GEMINI_API_KEY is not configured. Please set your Gemini API key in Settings.")
+
             # 1. Preparing
             self.update_job_progress(job_id, "Preparing", "Ingesting file & detecting format", 10.0)
             if not file_path.exists():
@@ -477,6 +525,7 @@ class JobManager:
                     doc_category = agentic_res.get("documentCategory", "General Document")
                     doc_title = agentic_res.get("documentTitle", "Extracted Document")
                     job_final_status = agentic_res.get("status", "Completed")
+                    job_confidence = agentic_res.get("confidence", 95.0)
 
                     # Phase 4: persist schema validation report if present
                     schema_val = agentic_res.get("schemaValidation", {})
@@ -513,33 +562,68 @@ class JobManager:
                     doc_category = extracted_res.get("documentCategory") or schema_info.get("documentCategory", "General Document")
                     doc_title = extracted_res.get("documentTitle") or schema_info.get("documentTitle", "Extracted Document")
                     job_final_status = "Completed"
+                    job_confidence = extracted_res.get("confidence", 95.0)
 
-            # 5. Writing Excel
-            self.update_job_progress(
-                job_id, "Writing Excel", "Generating dynamic Excel and CSV outputs", 90.0,
-                document_category=doc_category,
-                document_title=doc_title,
-                schema_json=schema,
-                rows_json=rows
-            )
-            
-            time.sleep(0.5) # Brief pause for state sync
+            # 5. Validate extraction output before completing
+            has_valid_data = False
+            if rows and isinstance(rows, list):
+                for r in rows:
+                    f = r.get("fields") or {}
+                    if any(str(v).strip() for v in f.values() if v and not str(v).startswith("Key Missing")):
+                        has_valid_data = True
+                        break
 
-            # 6. Completed or Waiting for Human Review
-            self.update_job_progress(
-                job_id, job_final_status, f"Job processing finalized with status: {job_final_status}", 100.0,
-                document_category=doc_category,
-                document_title=doc_title,
-                schema_json=schema,
-                rows_json=rows
-            )
-
-            self.add_log(job_id, "SUCCESS", f"Extraction completed. {len(schema)} columns, {len(rows)} rows.")
-            self.dispatch_webhook(job_id)
+            if not has_valid_data or not schema:
+                job_final_status = "Failed"
+                failure_msg = "Extraction completed but returned 0 valid data fields."
+                self.update_job_progress(
+                    job_id, "Failed", failure_msg, 100.0,
+                    document_category=doc_category,
+                    document_title=doc_title,
+                    schema_json=schema,
+                    rows_json=rows,
+                    confidence=0.0,
+                    error=failure_msg
+                )
+                self.add_log(job_id, "ERROR", failure_msg)
+            else:
+                # 6. Completed or Waiting for Human Review
+                self.update_job_progress(
+                    job_id, job_final_status, f"Job processing finalized with status: {job_final_status}", 100.0,
+                    document_category=doc_category,
+                    document_title=doc_title,
+                    schema_json=schema,
+                    rows_json=rows,
+                    confidence=job_confidence
+                )
+                self.add_log(job_id, "SUCCESS", f"Extraction completed. {len(schema)} columns, {len(rows)} rows.")
+                self.dispatch_webhook(job_id)
 
         except Exception as e:
             err_msg = str(e)
             print(f"Job {job_id} failed: {err_msg}")
             self.update_job_progress(job_id, "Failed", f"Extraction failed: {err_msg}", 100.0, error=err_msg)
+
+    def recover_orphaned_jobs(self) -> int:
+        """
+        v4.1 Crash Recovery: Recovers jobs left in progress (Analyzing/Extracting) upon server restart.
+        """
+        recovered_count = 0
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT job_id, status FROM jobs WHERE status IN ('Analyzing', 'Extracting', 'Processing')")
+                orphaned = cursor.fetchall()
+                for row in orphaned:
+                    j_id = row["job_id"]
+                    cursor.execute("""
+                    UPDATE jobs SET status = 'WaitingForReview', current_stage = 'Process restarted during execution — marked for review', error_code = 'PROCESS_RESTART'
+                    WHERE job_id = ?
+                    """, (j_id,))
+                    recovered_count += 1
+                conn.commit()
+        except Exception as e:
+            print(f"Error during orphaned job recovery: {e}")
+        return recovered_count
 
 job_manager = JobManager()

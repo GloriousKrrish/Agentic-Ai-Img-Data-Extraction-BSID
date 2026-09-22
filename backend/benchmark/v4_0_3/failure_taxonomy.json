@@ -1,0 +1,44 @@
+[
+  {
+    "failure_id": "FAIL-001",
+    "category": "Schema mapping failure",
+    "document_type": "medical_invoice",
+    "format": "png",
+    "field_type": "string / currency",
+    "observed_behavior": "Field key casing variation (subTotal vs subtotal) led to key mismatch in automated ground truth comparison.",
+    "expected_behavior": "Canonical key normalization maps camelCase, snake_case, and space-separated keys transparently.",
+    "root_cause": "Strict case-sensitive string matching in evaluator ground-truth comparison without key canonicalization.",
+    "impact": "HIGH",
+    "frequency": 1,
+    "proposed_fix": "Implement normalize_key helper in validator and evaluator to map keys canonically.",
+    "evidence_source": "benchmark/ground_truth/DOC-012_test_bill.png.json"
+  },
+  {
+    "failure_id": "FAIL-002",
+    "category": "Validation failure",
+    "document_type": "medical_invoice",
+    "format": "png",
+    "field_type": "currency",
+    "observed_behavior": "Printed document subtotal 745.00 + line item 1000.00 = 1745.00, which differs from printed subtotal 745.00.",
+    "expected_behavior": "Preserve printed source value 745.00, set mathematical_consistency = FAIL, route job to WaitingForReview.",
+    "root_cause": "Adversarial document printing error in source image MedicalBill.png.",
+    "impact": "CRITICAL",
+    "frequency": 2,
+    "proposed_fix": "Separate SOURCE_FIDELITY from MATHEMATICAL_CONSISTENCY in validation engine, enforcing HITL state.",
+    "evidence_source": "MedicalBill.png & 22_Adversarial_Math_Mismatch.png"
+  },
+  {
+    "failure_id": "FAIL-003",
+    "category": "Hallucination / Extra field extraction",
+    "document_type": "tax_statement",
+    "format": "png",
+    "field_type": "transient_metadata",
+    "observed_behavior": "Extra transient keys (e.g. serNo, lineItems) extracted by Vision engine.",
+    "expected_behavior": "Strictly filter non-schema metadata keys or mark as UNVERIFIED.",
+    "root_cause": "Default vision extraction schema includes optional metadata fields.",
+    "impact": "LOW",
+    "frequency": 1,
+    "proposed_fix": "Filter non-schema metadata keys in validation engine scorecard output.",
+    "evidence_source": "04_Annual_Property_Tax.png"
+  }
+]

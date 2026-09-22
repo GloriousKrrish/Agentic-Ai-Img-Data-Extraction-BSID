@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { UniversalDocumentDataset } from '../types';
-import { Search, Download, RefreshCw, CheckCircle2, FileSpreadsheet, Database, Edit3, X, Save, ExternalLink, Check, AlertCircle, Brain, Shield, XCircle, CheckCircle } from 'lucide-react';
+import { Search, Download, RefreshCw, CheckCircle2, FileSpreadsheet, Database, Edit3, X, Save, ExternalLink, Check, AlertCircle, Brain, XCircle, CheckCircle } from 'lucide-react';
 import { getApiUrl } from '../config/api';
 
 interface ResultsProps {
@@ -283,6 +283,22 @@ export const Results: React.FC<ResultsProps> = ({
                 ))}
               </tbody>
             </table>
+          </div>
+        ) : activeJob?.status === 'Failed' ? (
+          <div style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <XCircle size={42} color="#EF4444" />
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#991B1B', margin: 0 }}>Extraction Failed</h3>
+            <p style={{ fontSize: 13, color: '#DC2626', margin: 0, maxWidth: 500, background: '#FEF2F2', padding: '12px 18px', borderRadius: 8, border: '1px solid #FECACA' }}>
+              {activeJob.error || 'Document processing was terminated due to an internal error or missing API key.'}
+            </p>
+          </div>
+        ) : activeJob && !['Completed', 'Failed', 'WaitingForReview'].includes(activeJob.status) ? (
+          <div style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <RefreshCw size={36} color="#4F46E5" style={{ animation: 'spin 1.5s linear infinite' }} />
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: 0 }}>Extraction In Progress</h3>
+            <p style={{ fontSize: 13, color: '#64748B', margin: 0, maxWidth: 400 }}>
+              Stage: {activeJob.current_stage || 'Processing document fields'} ({activeJob.progress || 0}%)
+            </p>
           </div>
         ) : (
           <div style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>

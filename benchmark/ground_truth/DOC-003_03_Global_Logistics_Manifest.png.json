@@ -1,0 +1,14 @@
+{
+  "doc_id": "DOC-003",
+  "filename": "03_Global_Logistics_Manifest.png",
+  "doc_type": "manifest",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "manifestId": "MAN-7712",
+    "date": "2026-09-19",
+    "carrierName": "SwiftFreight Express",
+    "portOfEntry": "Los Angeles CA",
+    "totalFreightCharge": "2200.00"
+  }
+}

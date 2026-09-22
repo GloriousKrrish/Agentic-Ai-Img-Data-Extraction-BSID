@@ -61,9 +61,9 @@ class FieldValidationEngine:
                     ))
 
         # 2. Cross-Field Arithmetic Relationships
-        subtotal = self._extract_num(fields_dict, ["subtotal", "sub_total", "net_amount"])
-        tax = self._extract_num(fields_dict, ["tax", "tax_amount", "vat", "gst"])
-        total = self._extract_num(fields_dict, ["total", "grand_total", "total_amount", "amount_due"])
+        subtotal = self._extract_num(fields_dict, ["subtotal", "sub_total", "subtotalamount", "net_amount", "netamount"])
+        tax = self._extract_num(fields_dict, ["tax", "tax_amount", "taxamount", "vat", "gst", "gratuityamount"])
+        total = self._extract_num(fields_dict, ["total", "grand_total", "total_amount", "totalamount", "amount_due", "amountdue", "grandtotal", "totalpayable", "totaldue"])
 
         if subtotal is not None and tax is not None and total is not None:
             expected_total = round(subtotal + tax, 2)

@@ -1,0 +1,213 @@
+[
+  {
+    "index": 1,
+    "filename": "01_Tech_Hardware_Invoice.png",
+    "job_id": "job-63bd6d26",
+    "status": "Completed",
+    "field_count": 7,
+    "fields_dict": {
+      "invoiceNumber": "INV-2026-8801",
+      "invoiceDate": "2026-09-15",
+      "customerName": "Acme Corp",
+      "subtotal": "5297.00",
+      "taxAmount": "529.70",
+      "totalAmount": "5826.70",
+      "lineItems": "MacBook Pro 16 M3 Max: $3499.00, Studio Display 27: $1599.00, Magic Keyboard Touch ID: $199.00"
+    },
+    "confidence": 93.0,
+    "evidence_count": 6,
+    "retry_count": 0,
+    "excel_export": "PASS",
+    "audit_pdf_export": "PASS",
+    "audit_json_export": "PASS"
+  },
+  {
+    "index": 2,
+    "filename": "02_FreshMart_Grocery_Receipt.png",
+    "job_id": "job-a21d5d31",
+    "status": "Completed",
+    "field_count": 7,
+    "fields_dict": {
+      "receiptNumber": "REC-99201",
+      "date": "2026-09-18",
+      "storeLocation": "Downtown Branch #4",
+      "subtotal": "30.46",
+      "tax": "2.44",
+      "grandTotal": "32.90",
+      "lineItems": "Organic Whole Milk 1Gal: $5.99, Avocado Bag 5ct: $4.99, Wild Sockeye Salmon 1lb: $14.99, Sourdough Bread: $4.49"
+    },
+    "confidence": 93.0,
+    "evidence_count": 6,
+    "retry_count": 0,
+    "excel_export": "PASS",
+    "audit_pdf_export": "PASS",
+    "audit_json_export": "PASS"
+  },
+  {
+    "index": 3,
+    "filename": "03_Global_Logistics_Manifest.png",
+    "job_id": "job-077a6761",
+    "status": "Completed",
+    "field_count": 6,
+    "fields_dict": {
+      "manifestId": "MAN-7712",
+      "date": "2026-09-19",
+      "carrierName": "SwiftFreight Express",
+      "portOfEntry": "Los Angeles CA",
+      "totalFreightCharge": "2200.00",
+      "lineItems": "Container A - Electronic Components: $1200.00, Container B - Plastic Enclosures: $850.00, Customs Inspection Fee: $150.00"
+    },
+    "confidence": 92.0,
+    "evidence_count": 5,
+    "retry_count": 0,
+    "excel_export": "PASS",
+    "audit_pdf_export": "PASS",
+    "audit_json_export": "PASS"
+  },
+  {
+    "index": 4,
+    "filename": "04_Annual_Property_Tax.png",
+    "job_id": "job-073fe104",
+    "status": "Completed",
+    "field_count": 6,
+    "fields_dict": {
+      "parcelId": "PRC-990-12A",
+      "taxYear": "2026",
+      "ownerName": "Johnathan Miller",
+      "dueDate": "2026-11-30",
+      "totalPayable": "6400.00",
+      "taxItems": "4200.00"
+    },
+    "confidence": 93.0,
+    "evidence_count": 6,
+    "retry_count": 0,
+    "excel_export": "PASS",
+    "audit_pdf_export": "PASS",
+    "audit_json_export": "PASS"
+  },
+  {
+    "index": 5,
+    "filename": "05_Diagnostic_Lab_Invoice.png",
+    "job_id": "job-feb072b4",
+    "status": "Completed",
+    "field_count": 5,
+    "fields_dict": {
+      "labOrderId": "LAB-44012",
+      "patientName": "Sarah Connor",
+      "orderingPhysician": "Dr. Robert Vance",
+      "totalTestCharges": "340.00",
+      "testItems": "Comprehensive Metabolic Panel (CMP): $180.00, Lipid Panel Profile: $95.00, Hemoglobin A1c Test: $65.00"
+    },
+    "confidence": 91.0,
+    "evidence_count": 5,
+    "retry_count": 0,
+    "excel_export": "PASS",
+    "audit_pdf_export": "PASS",
+    "audit_json_export": "PASS"
+  },
+  {
+    "index": 6,
+    "filename": "06_Bistro_Dinner_Bill.png",
+    "job_id": "job-f6662d9c",
+    "status": "Completed",
+    "field_count": 8,
+    "fields_dict": {
+      "restaurantName": "L'ETOILE BISTRO",
+      "tableNumber": "Table 14",
+      "date": "2026-09-20",
+      "serverName": "Marcus",
+      "lineItems": "Ribeye Steak 12oz: $48.00, Pan Seared Sea Bass: $42.00, Pinot Noir Glass x2: $28.00, Tiramisu Dessert: $12.00",
+      "subtotal": "130.00",
+      "gratuityAmount": "23.40",
+      "totalDue": "153.40"
+    },
+    "confidence": 93.0,
+    "evidence_count": 7,
+    "retry_count": 0,
+    "excel_export": "PASS",
+    "audit_pdf_export": "PASS",
+    "audit_json_export": "PASS"
+  },
+  {
+    "index": 7,
+    "filename": "07_Employee_Onboarding_Record.png",
+    "job_id": "job-1f1fd348",
+    "status": "Completed",
+    "field_count": 6,
+    "fields_dict": {
+      "employeeId": "EMP-9021",
+      "employeeName": "David K Zhang",
+      "department": "Cloud Infrastructure",
+      "hireDate": "2026-09-01",
+      "totalCompensationPackage": "9575.00",
+      "compensationItems": "Base Monthly Salary: $8500.00, Health Insurance Benefit: $650.00, 401k Employer Match: $425.00"
+    },
+    "confidence": 92.0,
+    "evidence_count": 6,
+    "retry_count": 0,
+    "excel_export": "PASS",
+    "audit_pdf_export": "PASS",
+    "audit_json_export": "PASS"
+  },
+  {
+    "index": 8,
+    "filename": "08_Auto_Service_Invoice.png",
+    "job_id": "job-a7729d1f",
+    "status": "Completed",
+    "field_count": 7,
+    "fields_dict": {
+      "workOrderId": "WO-55102",
+      "vehicleDetails": "2024 Toyota RAV4",
+      "vin": "4T1B11HK5RU99102",
+      "subtotal": "459.85",
+      "tax": "36.79",
+      "totalAmount": "496.64",
+      "lineItems": "Synthetic Oil Change & Filter: $89.95, Front Brake Pads Replacement: $249.95, Wheel Alignment Service: $119.95"
+    },
+    "confidence": 93.0,
+    "evidence_count": 6,
+    "retry_count": 0,
+    "excel_export": "PASS",
+    "audit_pdf_export": "PASS",
+    "audit_json_export": "PASS"
+  },
+  {
+    "index": 9,
+    "filename": "09_Enterprise_Purchase_Order.csv",
+    "job_id": "job-ad98d28a",
+    "status": "Completed",
+    "field_count": 3,
+    "fields_dict": {
+      "poNumber": "PO-2026-99",
+      "vendorName": "Industrial Supplies Co",
+      "lineItems": "itemCode\": \"IND-901\", \"quantity\": 50, \"unitPrice\": 120.00, \"totalPrice\": 6000.00}, {\"itemCode\": \"IND-902\", \"quantity\": 20, \"unitPrice\": 250.00, \"totalPrice\": 5000.00"
+    },
+    "confidence": 95.0,
+    "evidence_count": 2,
+    "retry_count": 0,
+    "excel_export": "PASS",
+    "audit_pdf_export": "PASS",
+    "audit_json_export": "PASS"
+  },
+  {
+    "index": 10,
+    "filename": "10_City_Power_Utility_Bill.xlsx",
+    "job_id": "job-dffebd6b",
+    "status": "Completed",
+    "field_count": 6,
+    "fields_dict": {
+      "accountNumber": "ACC-883019",
+      "customerName": "Elena Rostova",
+      "billingPeriod": "Aug 15 - Sep 15 2026",
+      "kwhConsumed": "840",
+      "ratePerKwh": "$0.14",
+      "totalCharge": "117.60"
+    },
+    "confidence": 96.0,
+    "evidence_count": 6,
+    "retry_count": 0,
+    "excel_export": "PASS",
+    "audit_pdf_export": "PASS",
+    "audit_json_export": "PASS"
+  }
+]

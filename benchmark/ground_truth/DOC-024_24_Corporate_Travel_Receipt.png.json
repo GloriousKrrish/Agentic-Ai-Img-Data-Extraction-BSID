@@ -1,0 +1,12 @@
+{
+  "doc_id": "DOC-024",
+  "filename": "24_Corporate_Travel_Receipt.png",
+  "doc_type": "receipt",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "hotelName": "Grand Hyatt NYC",
+    "checkOutDate": "2026-09-10",
+    "totalPaid": "840.00"
+  }
+}

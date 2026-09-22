@@ -53,8 +53,8 @@ class ValidationEngine:
                 total_weight += 1.0
                 continue
 
-            # 1. Base Score for non-empty value
-            field_conf = 0.50
+            # 1. Base Score for non-empty value (Multimodal Vision AI Extraction)
+            field_conf = 0.80
 
             # 2. Regex Format Validation
             key_lower = key.lower()
@@ -64,36 +64,36 @@ class ValidationEngine:
                 clean_phone = re.sub(r'\D', '', val_str)
                 if len(clean_phone) == 10 and clean_phone[0] in "6789":
                     regex_pass = True
-                    field_conf += 0.20
+                    field_conf += 0.15
                 else:
                     regex_pass = False
             elif "gst" in key_lower or "gstin" in key_lower:
                 if len(val_str) == 15 and val_str[:2].isdigit():
                     regex_pass = True
-                    field_conf += 0.20
+                    field_conf += 0.15
                 else:
                     regex_pass = False
             elif "date" in key_lower:
                 if re.search(r'\d{2}[/-]\d{2}[/-]\d{2,4}|\d{4}[/-]\d{2}[/-]\d{2}', val_str):
                     regex_pass = True
-                    field_conf += 0.20
+                    field_conf += 0.15
                 else:
                     regex_pass = False
             elif any(nk in key_lower for nk in ["amount", "total", "cost", "price", "tax", "discount", "quantity"]):
                 if re.search(r'^\d+(\.\d+)?$', val_str.replace(',', '').replace('$', '').replace('₹', '')):
                     regex_pass = True
-                    field_conf += 0.20
+                    field_conf += 0.15
                 else:
                     regex_pass = False
             else:
-                field_conf += 0.15
+                field_conf += 0.10
 
             validations["regex"] = regex_pass
 
-            # 3. OCR Text Consensus Check
+            # 3. OCR Text Consensus Check (if OCR text available)
             if ocr_upper and val_str.upper() in ocr_upper:
                 sources.append("ocr")
-                field_conf += 0.15
+                field_conf += 0.05
 
             field_scores[key] = FieldConfidence(
                 field_key=key,
@@ -106,16 +106,22 @@ class ValidationEngine:
             weighted_score += field_conf
             total_weight += 1.0
 
-        # 4. Arithmetic Consistency Audit
+        # 4. Arithmetic Consistency Audit & Cross-Field Validation
         math_audit = perform_math_audit(extracted_fields)
-        arithmetic_passed = math_audit.get("passed", True)
+        from backend.services.field_validation_engine import field_validation_engine
+        _, field_errors = field_validation_engine.validate_fields(extracted_fields, ocr_text)
+
+        arithmetic_errors = [e for e in field_errors if e.error_category == "ARITHMETIC_MISMATCH"]
+        arithmetic_passed = math_audit.get("passed", True) and len(arithmetic_errors) == 0
+
         if not arithmetic_passed:
-            review_reasons.append(f"Arithmetic consistency check failed: {math_audit.get('details')}")
+            details = math_audit.get("details") or (arithmetic_errors[0].description if arithmetic_errors else "Math mismatch")
+            review_reasons.append(f"Arithmetic consistency check failed: {details}")
 
         # Compute Overall Confidence
         overall_conf = round((weighted_score / total_weight), 2) if total_weight > 0 else 0.50
         if not arithmetic_passed:
-            overall_conf = max(overall_conf - 0.15, 0.40)
+            overall_conf = max(overall_conf - 0.20, 0.40)
 
         threshold = plan.human_review.threshold if plan else 0.70
         review_required = (overall_conf < threshold) or not arithmetic_passed or len(flagged_fields) > (len(schema_keys) * 0.5)

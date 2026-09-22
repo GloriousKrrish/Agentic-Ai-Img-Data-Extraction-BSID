@@ -1,0 +1,14 @@
+{
+  "doc_id": "DOC-012",
+  "filename": "test_bill.png",
+  "doc_type": "medical_invoice",
+  "source_class": "INDEPENDENT_REAL_REFERENCE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "invoiceNumber": "12245",
+    "invoiceDate": "07/01/23",
+    "patientName": "Apple Song",
+    "subTotal": "745.00",
+    "totalAmount": "1902.05"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "audit_version": "v4.0.1",
+  "audited_documents": [
+    {
+      "document": "01_Tech_Hardware_Invoice.png",
+      "job_id": "job-b8a1318b",
+      "canonical_matrix": [
+        {"field": "invoiceNumber", "db": "INV-2026-8801", "api": "INV-2026-8801", "json": "INV-2026-8801", "csv": "INV-2026-8801", "xlsx": "INV-2026-8801", "audit_json": "INV-2026-8801", "audit_pdf": "INV-2026-8801", "result": "EQUAL"},
+        {"field": "invoiceDate", "db": "2026-09-15", "api": "2026-09-15", "json": "2026-09-15", "csv": "2026-09-15", "xlsx": "2026-09-15", "audit_json": "2026-09-15", "audit_pdf": "2026-09-15", "result": "EQUAL"},
+        {"field": "customerName", "db": "Acme Corp", "api": "Acme Corp", "json": "Acme Corp", "csv": "Acme Corp", "xlsx": "Acme Corp", "audit_json": "Acme Corp", "audit_pdf": "Acme Corp", "result": "EQUAL"},
+        {"field": "subtotal", "db": "5297.00", "api": "5297.00", "json": "5297.00", "csv": "5297.00", "xlsx": "5297.00", "audit_json": "5297.00", "audit_pdf": "5297.00", "result": "EQUAL"},
+        {"field": "taxAmount", "db": "529.70", "api": "529.70", "json": "529.70", "csv": "529.70", "xlsx": "529.70", "audit_json": "529.70", "audit_pdf": "529.70", "result": "EQUAL"},
+        {"field": "totalAmount", "db": "5826.70", "api": "5826.70", "json": "5826.70", "csv": "5826.70", "xlsx": "5826.70", "audit_json": "5826.70", "audit_pdf": "5826.70", "result": "EQUAL"}
+      ]
+    },
+    {
+      "document": "06_Bistro_Dinner_Bill.png",
+      "job_id": "job-fa31198b",
+      "canonical_matrix": [
+        {"field": "restaurantName", "db": "L'ETOILE BISTRO", "api": "L'ETOILE BISTRO", "json": "L'ETOILE BISTRO", "csv": "L'ETOILE BISTRO", "xlsx": "L'ETOILE BISTRO", "audit_json": "L'ETOILE BISTRO", "audit_pdf": "L'ETOILE BISTRO", "result": "EQUAL"},
+        {"field": "tableNumber", "db": "Table 14", "api": "Table 14", "json": "Table 14", "csv": "Table 14", "xlsx": "Table 14", "audit_json": "Table 14", "audit_pdf": "Table 14", "result": "EQUAL"},
+        {"field": "date", "db": "2026-09-20", "api": "2026-09-20", "json": "2026-09-20", "csv": "2026-09-20", "xlsx": "2026-09-20", "audit_json": "2026-09-20", "audit_pdf": "2026-09-20", "result": "EQUAL"},
+        {"field": "subtotal", "db": "130.00", "api": "130.00", "json": "130.00", "csv": "130.00", "xlsx": "130.00", "audit_json": "130.00", "audit_pdf": "130.00", "result": "EQUAL"},
+        {"field": "gratuityAmount", "db": "23.40", "api": "23.40", "json": "23.40", "csv": "23.40", "xlsx": "23.40", "audit_json": "23.40", "audit_pdf": "23.40", "result": "EQUAL"},
+        {"field": "totalDue", "db": "153.40", "api": "153.40", "json": "153.40", "csv": "153.40", "xlsx": "153.40", "audit_json": "153.40", "audit_pdf": "153.40", "result": "EQUAL"}
+      ]
+    },
+    {
+      "document": "10_City_Power_Utility_Bill.xlsx",
+      "job_id": "job-e3d5b502",
+      "canonical_matrix": [
+        {"field": "accountNumber", "db": "ACC-883019", "api": "ACC-883019", "json": "ACC-883019", "csv": "ACC-883019", "xlsx": "ACC-883019", "audit_json": "ACC-883019", "audit_pdf": "ACC-883019", "result": "EQUAL"},
+        {"field": "customerName", "db": "Elena Rostova", "api": "Elena Rostova", "json": "Elena Rostova", "csv": "Elena Rostova", "xlsx": "Elena Rostova", "audit_json": "Elena Rostova", "audit_pdf": "Elena Rostova", "result": "EQUAL"},
+        {"field": "billingPeriod", "db": "Aug 15 - Sep 15 2026", "api": "Aug 15 - Sep 15 2026", "json": "Aug 15 - Sep 15 2026", "csv": "Aug 15 - Sep 15 2026", "xlsx": "Aug 15 - Sep 15 2026", "audit_json": "Aug 15 - Sep 15 2026", "audit_pdf": "Aug 15 - Sep 15 2026", "result": "EQUAL"},
+        {"field": "kwhConsumed", "db": "840", "api": "840", "json": "840", "csv": "840", "xlsx": "840", "audit_json": "840", "audit_pdf": "840", "result": "EQUAL"},
+        {"field": "ratePerKwh", "db": "$0.14", "api": "$0.14", "json": "$0.14", "csv": "$0.14", "xlsx": "$0.14", "audit_json": "$0.14", "audit_pdf": "$0.14", "result": "EQUAL"},
+        {"field": "totalCharge", "db": "117.60", "api": "117.60", "json": "117.60", "csv": "117.60", "xlsx": "117.60", "audit_json": "117.60", "audit_pdf": "117.60", "result": "EQUAL"}
+      ]
+    }
+  ],
+  "discrepancy_count": 0,
+  "canonical_consistency_pass": true
+}

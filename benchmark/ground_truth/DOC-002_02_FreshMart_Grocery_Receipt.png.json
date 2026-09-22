@@ -1,0 +1,15 @@
+{
+  "doc_id": "DOC-002",
+  "filename": "02_FreshMart_Grocery_Receipt.png",
+  "doc_type": "receipt",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "receiptNumber": "REC-99201",
+    "date": "2026-09-18",
+    "storeLocation": "Downtown Branch #4",
+    "subtotal": "30.46",
+    "tax": "2.44",
+    "grandTotal": "32.90"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "version": "v4.0.3",
+  "taxonomy_summary": {
+    "total_failure_instances": 4,
+    "classified_categories": {
+      "Schema mapping failure": {
+        "count": 1,
+        "impact": "HIGH",
+        "affected_documents": ["DOC-012 (test_bill.png)"],
+        "root_cause": "Field key casing and label variation between vision extraction and ground-truth key definitions."
+      },
+      "Validation failure": {
+        "count": 2,
+        "impact": "CRITICAL",
+        "affected_documents": ["DOC-011 (MedicalBill.png)", "DOC-022 (22_Adversarial_Math_Mismatch.png)"],
+        "root_cause": "Printed document total differs from subtotal sum. System correctly flags arithmetic error and routes job to WaitingForReview."
+      },
+      "Hallucination / Extra field extraction": {
+        "count": 1,
+        "impact": "LOW",
+        "affected_documents": ["DOC-004 (04_Annual_Property_Tax.png)"],
+        "root_cause": "Extracted transient metadata fields (e.g. serNo, lineItems) not specified in flat ground-truth schema."
+      }
+    }
+  }
+}

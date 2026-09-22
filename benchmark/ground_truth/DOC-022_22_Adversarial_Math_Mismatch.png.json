@@ -1,0 +1,12 @@
+{
+  "doc_id": "DOC-022",
+  "filename": "22_Adversarial_Math_Mismatch.png",
+  "doc_type": "invoice",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "subtotal": "100.00",
+    "tax": "10.00",
+    "totalAmount": "150.00"
+  }
+}

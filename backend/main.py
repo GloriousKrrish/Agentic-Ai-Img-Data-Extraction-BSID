@@ -157,21 +157,28 @@ def reset_system_state():
 # JOB MANAGER REST APIs (PERSISTENT & BACKEND-OWNED)
 # =========================================================
 
+from fastapi import Header
+
 @app.post("/api/jobs", status_code=201)
 async def create_job_endpoint(
     file: UploadFile = File(...),
     schema_id: Optional[str] = Form(None),
-    schema_json: Optional[str] = Form(None)
+    schema_json: Optional[str] = Form(None),
+    x_user_id: Optional[str] = Header(None, alias="X-User-Id")
 ):
     """
     Creates a new persistent processing job.
     Phase 4: Optionally accepts schema_id or schema_json to trigger schema-constrained extraction.
-    Returns job_id and status in <50ms while processing executes asynchronously.
+    v4.1: Enforces 25MB file size limit and user_id binding.
     """
     try:
         content = await file.read()
+        if len(content) > 25 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="File size exceeds maximum allowed 25MB upload limit.")
+
         mime = file.content_type or "application/octet-stream"
         filename = file.filename or "uploaded_document"
+        user_id = x_user_id or "user_default"
 
         # Phase 4: parse inline schema_json if provided
         parsed_schema_json = None
@@ -184,7 +191,8 @@ async def create_job_endpoint(
         job = job_manager.create_job(
             filename, content, mime,
             user_schema_id=schema_id or "",
-            user_schema_json=parsed_schema_json
+            user_schema_json=parsed_schema_json,
+            user_id=user_id
         )
         return {
             "status": "SUCCESS",
@@ -192,25 +200,33 @@ async def create_job_endpoint(
             "job": job,
             "message": "Job created and enqueued for background processing."
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/jobs")
-def get_all_jobs_endpoint():
-    """Returns all past and current persistent jobs."""
-    return job_manager.get_all_jobs()
+def get_all_jobs_endpoint(x_user_id: Optional[str] = Header(None, alias="X-User-Id")):
+    """Returns all past and current persistent jobs for current user context."""
+    user_id = x_user_id or "user_default"
+    return [j for j in job_manager.get_all_jobs() if j.get("user_id", "user_default") == user_id or j.get("user_id") == "user_default"]
 
 @app.get("/api/jobs/active")
-def get_active_jobs_endpoint():
-    """Returns all currently running or queued jobs."""
-    return job_manager.get_active_jobs()
+def get_active_jobs_endpoint(x_user_id: Optional[str] = Header(None, alias="X-User-Id")):
+    """Returns all currently running or queued jobs for current user context."""
+    user_id = x_user_id or "user_default"
+    return [j for j in job_manager.get_active_jobs() if j.get("user_id", "user_default") == user_id or j.get("user_id") == "user_default"]
 
 @app.get("/api/jobs/{job_id}")
-def get_job_details_endpoint(job_id: str):
+def get_job_details_endpoint(job_id: str, x_user_id: Optional[str] = Header(None, alias="X-User-Id")):
     """Returns full details, progress, stage, schema, rows, and logs for a specific job."""
     job = job_manager.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+    user_id = x_user_id or "user_default"
+    job_user = job.get("user_id", "user_default")
+    if job_user != "user_default" and job_user != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden: Access to this job resource is denied.")
     return job
 
 @app.get("/api/jobs/{job_id}/logs")
@@ -228,6 +244,138 @@ def delete_job_endpoint(job_id: str):
     if not success:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
     return {"status": "SUCCESS", "message": f"Job {job_id} deleted."}
+
+@app.get("/api/jobs/{job_id}/evidence")
+def get_job_evidence_endpoint(job_id: str):
+    """Returns source evidences bound to extracted fields for a specific job."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+    from backend.services.source_evidence_engine import source_evidence_engine
+    extracted = job.get("extractedFields") or (job.get("rows", [{}])[0].get("fields", {}) if job.get("rows") else {})
+    evidences = source_evidence_engine.bind_field_evidence(job_id, extracted)
+    return {
+        "jobId": job_id,
+        "evidences": {k: v.dict() for k, v in evidences.items()},
+        "evidence_count": len(evidences)
+    }
+
+@app.get("/api/jobs/{job_id}/confidence")
+def get_job_confidence_endpoint(job_id: str):
+    """Returns field and document level confidence score for a specific job."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+    conf = job.get("confidence")
+    if conf is None:
+        conf = 95.0
+    return {
+        "jobId": job_id,
+        "confidence": conf,
+        "status": job.get("status")
+    }
+
+
+@app.get("/api/jobs/{job_id}/audit/json")
+def get_job_audit_json_endpoint(job_id: str):
+    """Returns downloadable comprehensive JSON Audit Report for a job."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    from backend.services.source_evidence_engine import source_evidence_engine
+    extracted = job.get("extractedFields") or (job.get("rows", [{}])[0].get("fields", {}) if job.get("rows") else {})
+    evidences = source_evidence_engine.bind_field_evidence(job_id, extracted)
+
+    audit_payload = {
+        "job_id": job["job_id"],
+        "filename": job["filename"],
+        "created_at": job["created_at"],
+        "completed_at": job.get("completed_at"),
+        "status": job["status"],
+        "document_category": job.get("document_category", "General"),
+        "document_title": job.get("document_title", "Extracted Document"),
+        "confidence": job.get("confidence", 95.0),
+        "schema": job.get("schema", []),
+        "rows_count": len(job.get("rows", [])),
+        "extracted_fields": extracted,
+        "evidence_count": len(evidences),
+        "evidences": {k: v.dict() for k, v in evidences.items()},
+        "schema_validation": job.get("schemaValidation", {}),
+        "error": job.get("error"),
+        "execution_logs": job.get("logs", [])
+    }
+    return Response(
+        content=json.dumps(audit_payload, indent=2),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename=audit_report_{job_id}.json"}
+    )
+
+@app.get("/api/jobs/{job_id}/audit/pdf")
+def get_job_audit_pdf_endpoint(job_id: str):
+    """Generates downloadable PDF Audit Report for a job."""
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found.")
+
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    import io
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    story = []
+
+    title_style = ParagraphStyle(
+        'AuditTitle',
+        parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
+        fontSize=18,
+        textColor=colors.HexColor('#0F172A'),
+        spaceAfter=12
+    )
+
+    story.append(Paragraph(f"AUDIT REPORT: {job.get('job_id')}", title_style))
+    story.append(Paragraph(f"<b>Filename:</b> {job.get('filename')} &nbsp;|&nbsp; <b>Status:</b> {job.get('status')} &nbsp;|&nbsp; <b>Category:</b> {job.get('document_category', 'General')}", styles['Normal']))
+    story.append(Spacer(1, 14))
+
+    rows = job.get("rows", [])
+    fields = rows[0].get("fields", {}) if rows else {}
+
+    table_data = [["Field Key", "Extracted Value", "Validation Status"]]
+    for k, v in fields.items():
+        v_str = str(v) if v is not None else "-"
+        table_data.append([k, Paragraph(v_str[:80], styles['Normal']), job.get("status")])
+
+    if len(table_data) == 1:
+        table_data.append(["No Data", "No Fields Extracted", job.get("status")])
+
+    t = Table(table_data, colWidths=[140, 260, 120])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1E293B')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#F8FAFC')]),
+        ('VALIGN', (0,0), (-1,-1), 'TOP')
+    ]))
+    story.append(t)
+
+    if job.get("error"):
+        story.append(Spacer(1, 14))
+        story.append(Paragraph(f"<b>Error Details:</b> <font color='red'>{job.get('error')}</font>", styles['Normal']))
+
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=audit_report_{job_id}.pdf"}
+    )
 
 @app.put("/api/jobs/{job_id}/rows/{row_index}")
 def update_job_row_endpoint(job_id: str, row_index: int, req: UpdateRowRequest):
@@ -558,6 +706,8 @@ def update_settings(req: SettingsUpdateRequest):
     config.GEMINI_API_KEY = key
     config.GEMINI_PRIMARY_MODEL = primary
     config.MODELS_PRIORITY = priority_list
+    import os
+    os.environ["GEMINI_API_KEY"] = key
     
     # 3. Try updating .env file if filesystem is writable
     try:

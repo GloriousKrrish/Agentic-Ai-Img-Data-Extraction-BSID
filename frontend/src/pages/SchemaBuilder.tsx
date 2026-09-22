@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Brain, Plus, Trash2, Save, Play, Upload, Download, ChevronDown, ChevronUp,
-  Code, Type, Hash, Calendar, ToggleLeft, List, Layers, Link2, AlertCircle,
-  CheckCircle, XCircle, RefreshCw, Copy, FileJson, Sparkles, Database,
-  Edit3, Eye, GitCompare, Info
+  Brain, Plus, Trash2, Save, Play, Upload, ChevronDown, ChevronUp,
+  Code, Type, Hash, Calendar, ToggleLeft, List, Layers, AlertCircle,
+  CheckCircle, XCircle, RefreshCw, FileJson, Sparkles, Database,
+  Edit3
 } from 'lucide-react';
 import { getApiUrl } from '../config/api';
 
@@ -115,7 +115,6 @@ export const SchemaBuilder: React.FC = () => {
 
   // Saved schemas
   const [savedSchemas, setSavedSchemas] = useState<SavedSchema[]>([]);
-  const [selectedSaved, setSelectedSaved] = useState<SavedSchema | null>(null);
 
   // Test mode
   const [testFile, setTestFile] = useState<File | null>(null);

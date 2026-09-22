@@ -1,0 +1,13 @@
+{
+  "doc_id": "DOC-005",
+  "filename": "05_Diagnostic_Lab_Invoice.png",
+  "doc_type": "medical_report",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "labOrderId": "LAB-44012",
+    "patientName": "Sarah Connor",
+    "orderingPhysician": "Dr. Robert Vance",
+    "totalTestCharges": "340.00"
+  }
+}

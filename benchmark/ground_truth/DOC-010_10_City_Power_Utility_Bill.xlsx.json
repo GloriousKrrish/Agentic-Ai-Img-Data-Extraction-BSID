@@ -1,0 +1,15 @@
+{
+  "doc_id": "DOC-010",
+  "filename": "10_City_Power_Utility_Bill.xlsx",
+  "doc_type": "utility_bill",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "accountNumber": "ACC-883019",
+    "customerName": "Elena Rostova",
+    "billingPeriod": "Aug 15 - Sep 15 2026",
+    "kwhConsumed": "840",
+    "ratePerKwh": "0.14",
+    "totalCharge": "117.60"
+  }
+}

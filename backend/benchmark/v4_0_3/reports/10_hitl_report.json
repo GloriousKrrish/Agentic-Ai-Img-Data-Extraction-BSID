@@ -1,0 +1,9 @@
+{
+  "hitl_rate_pct": 6.67,
+  "false_hitl_pct": 0.0,
+  "missed_hitl_pct": 0.0,
+  "hitl_documents": [
+    "MedicalBill.png",
+    "22_Adversarial_Math_Mismatch.png"
+  ]
+}

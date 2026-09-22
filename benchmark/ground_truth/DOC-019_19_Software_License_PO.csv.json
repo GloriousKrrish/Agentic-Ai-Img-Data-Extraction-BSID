@@ -1,0 +1,12 @@
+{
+  "doc_id": "DOC-019",
+  "filename": "19_Software_License_PO.csv",
+  "doc_type": "purchase_order",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "poNumber": "PO-SOFT-01",
+    "vendor": "JetBrains Inc",
+    "totalPrice": "899.00"
+  }
+}

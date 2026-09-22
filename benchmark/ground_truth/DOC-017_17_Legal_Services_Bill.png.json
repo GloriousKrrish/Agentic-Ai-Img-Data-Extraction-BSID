@@ -1,0 +1,13 @@
+{
+  "doc_id": "DOC-017",
+  "filename": "17_Legal_Services_Bill.png",
+  "doc_type": "invoice",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "billId": "LEG-4410",
+    "clientName": "Vanguard Partners",
+    "hoursBilled": "12.5",
+    "totalFee": "3750.00"
+  }
+}

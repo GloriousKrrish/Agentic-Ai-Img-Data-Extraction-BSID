@@ -1,0 +1,12 @@
+{
+  "doc_id": "DOC-020",
+  "filename": "20_Telecom_Monthly_Bill.xlsx",
+  "doc_type": "utility_bill",
+  "source_class": "INDEPENDENTLY_ANNOTATED_FIXTURE",
+  "gt_method": "INDEPENDENT_HUMAN",
+  "fields": {
+    "accountNumber": "TEL-3301",
+    "planName": "5G Enterprise Unlimited",
+    "monthlyCharge": "299.99"
+  }
+}
