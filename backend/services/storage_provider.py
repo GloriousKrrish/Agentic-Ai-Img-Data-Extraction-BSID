@@ -3,13 +3,16 @@ import shutil
 from pathlib import Path
 from typing import Optional, Dict, Any
 
+from backend.config import BASE_DIR
+
 class StorageProvider:
     """
     v4.2 StorageProvider Abstraction.
     Abstracts local disk storage and cloud S3-compatible object storage.
     """
     def __init__(self, base_dir: Path = None):
-        self.base_dir = base_dir or Path(r"c:\Users\admin\OneDrive\Desktop\PROJECTS\Agentic-Ai-Img-Data-Extraction-BSID-main\uploads")
+        default_dir = Path(os.getenv("UPLOADS_DIR", str(BASE_DIR / "uploads")))
+        self.base_dir = base_dir or default_dir
         os.makedirs(self.base_dir, exist_ok=True)
 
     def put(self, key: str, data_bytes: bytes, content_type: str = "application/octet-stream") -> str:

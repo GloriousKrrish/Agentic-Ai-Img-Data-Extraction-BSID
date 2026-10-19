@@ -1,11 +1,18 @@
 services:
   - type: web
-    name: agentic-ai-data-extraction
+    name: agentic-ai-backend
     env: python
-    buildCommand: "pip install -r requirements.txt && cd frontend && npm install && npm run build"
-    startCommand: "gunicorn -w 4 -k uvicorn.workers.UvicornWorker backend.main:app --bind 0.0.0.0:$PORT"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn -w 1 -k uvicorn.workers.UvicornWorker backend.main:app --bind 0.0.0.0:$PORT"
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_PRIMARY_MODEL
-        value: gemini-2.5-flash
+        value: gemini-flash-latest
+      - key: MODELS_PRIORITY
+        value: "gemini-flash-latest,gemini-3.1-flash-lite,gemini-flash-lite-latest"
+      - key: CORS_ORIGIN_REGEX
+        value: "^https:\\/\\/.*\\.vercel\\.app$"
+

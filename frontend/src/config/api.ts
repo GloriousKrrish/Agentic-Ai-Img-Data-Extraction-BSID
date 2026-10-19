@@ -1,11 +1,16 @@
 // Centralized API and WebSocket URL helper for deployment flexibility
+const DEFAULT_PROD_API_URL = 'https://agentic-ai-img-data-extraction-bsid.onrender.com';
 
 export const getApiBaseUrl = (): string => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl && typeof envUrl === 'string') {
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
     return envUrl.replace(/\/$/, '');
   }
-  return ''; // Relative path (works for Vercel serverless /api route or Vite proxy)
+  // In production builds (Vercel), default to the live Render backend
+  if (import.meta.env.PROD) {
+    return DEFAULT_PROD_API_URL;
+  }
+  return ''; // Relative path for Vite dev proxy
 };
 
 export const getApiUrl = (endpoint: string): string => {

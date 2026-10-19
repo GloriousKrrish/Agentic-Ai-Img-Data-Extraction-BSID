@@ -28,16 +28,16 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Verified working models for this API key (tested & confirmed 200 OK)
 DEFAULT_MODELS_LIST = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
     "gemini-flash-latest",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-lite-latest",
 ]
 
 def load_config_vars():
     global GEMINI_API_KEY, GEMINI_PRIMARY_MODEL, MODELS_PRIORITY, MAX_WORKERS
     load_dotenv(BASE_DIR / ".env", override=True)
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_PRIMARY_MODEL = os.getenv("GEMINI_PRIMARY_MODEL", "gemini-2.5-flash")
+    GEMINI_PRIMARY_MODEL = os.getenv("GEMINI_PRIMARY_MODEL", "gemini-flash-latest")
     raw_priority = os.getenv(
         "MODELS_PRIORITY",
         ",".join(DEFAULT_MODELS_LIST)
